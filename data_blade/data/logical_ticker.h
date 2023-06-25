@@ -20,6 +20,8 @@ class logical_ticker {
         inline uint32_t _amount_owned_mine_func();
         uint32_t _amount_owned_wrapper_func();
 
+        bool _double_check_transaction(uint32_t expected_held_amount, uint32_t attempted_to_trade_amount, uint32_t initial_held_amount);
+
         double _stock_price;
 
         std::string _ticker;

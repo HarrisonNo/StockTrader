@@ -19,7 +19,16 @@ Output:
 Description:
 Assumptions:
 */
-double wrapper_amount_owned(std::string ticker);
+uint32_t wrapper_amount_owned(std::string ticker);
+
+
+/*
+Input:
+Output: number successfully purchased
+Description:
+Assumptions:
+*/
+uint32_t wrapper_purchase_amount(std::string ticker, uint32_t amount);
 
 
 #endif WRAPPER_API

@@ -10,6 +10,8 @@
 *.userosscache
 *.sln.docstates
 
+*.exe
+
 .vscode/*
 
 # User-specific files (MonoDevelop/Xamarin Studio)
