@@ -181,6 +181,6 @@ bool logical_ticker::_double_check_transaction(uint32_t expected_held_amount, ui
 
     }
     else {//Partial success, partial failure
-
+        return success;
     }
 }
