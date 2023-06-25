@@ -12,7 +12,9 @@
 
 *.exe
 
+.vscode/**/*
 .vscode/*
+.vscode
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
