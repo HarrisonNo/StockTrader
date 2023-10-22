@@ -1,7 +1,7 @@
 //This program changes the values of FULL_DEBUG, DEBUG, and VERBOSE
 //Should be used like so:
 // ./compile_time_set_debug 0 0 0
-// With the ordering being FULL_DEBUG DEBUG VERBOSE
+// With the ordering being FULL_DEBUG PARTIAL_DEBUG VERBOSE
 #include <fstream>
 #include <iostream>
 #define ALL_FILE_PATH "../asserts_and_verifies"
@@ -11,7 +11,7 @@ int main(int argc, char** argv){
     bool enabled_full_debug = false;
     //argv[0] = "./compile_time_set_debug" --name of program here
     //argv[1] = 0 --value of FULL_DEBUG
-    //argv[2] = 0 --value of DEBUG
+    //argv[2] = 0 --value of PARTIAL_DEBUG
     //argv[3] = 0 --value of VERBOSE
     if (argc != 4){
         std::cout<<"Invalid number of args\n";
@@ -29,13 +29,13 @@ int main(int argc, char** argv){
         thefile.close();
     }
 
-    if (!enabled_full_debug && argv[2][0] == '1'){//Enable DEBUG only if we haven't already set FULL_DEBUG
-        thefile.open(ALL_FILE_PATH"/DEBUG.h", OPEN_IN_OUT_TRUNC);
-        thefile<<"#define DEBUG 1\n";
+    if (!enabled_full_debug && argv[2][0] == '1'){//Enable PARTIAL_DEBUG only if we haven't already set FULL_DEBUG
+        thefile.open(ALL_FILE_PATH"/PARTIAL_DEBUG.h", OPEN_IN_OUT_TRUNC);
+        thefile<<"#define PARTIAL_DEBUG 1\n";
         thefile.close();
     } else {
-        thefile.open(ALL_FILE_PATH"/DEBUG.h", OPEN_IN_OUT_TRUNC);
-        thefile<<"#define DEBUG 0\n";
+        thefile.open(ALL_FILE_PATH"/PARTIAL_DEBUG.h", OPEN_IN_OUT_TRUNC);
+        thefile<<"#define PARTIAL_DEBUG 0\n";
         thefile.close();
     }
 
