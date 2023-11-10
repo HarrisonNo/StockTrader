@@ -1,8 +1,9 @@
 #include <thread>
+#include <fstream>
 #include "logical_ticker.h"
 #include "wrapper_api.h"
 #include "assert_and_verify.h"
-
+#include "directory_file_saving.h"
 
 #define STOCK_PRICE_TIMEOUT 5 //Number of seconds we can use our stored stock price for a ticker before needing to check it again
 #define STOCK_AMOUNT_TIMEOUT 21600 //Number of seconds we can use our stored stock amount before double checking (6 hours)
@@ -46,6 +47,7 @@ double logical_ticker::stock_price() {
     if ((current_time - _time_last_checked_price) > STOCK_PRICE_TIMEOUT) {
         _stock_price = wrapper_stock_price(_ticker);
         _time_last_checked_price = current_time;
+        _save_stock_price_at_time(current_time);
     }
 
     return _stock_price;
@@ -174,4 +176,212 @@ Assumptions:
 */
 inline void logical_ticker::modify_selling_at_loss(bool enabled) {
     _can_sell_at_loss_default = enabled;
+}
+
+
+/*
+Input:
+Output:
+Description:
+Assumptions:
+*/
+inline std::string logical_ticker::ticker() {
+    return _ticker;
+}
+
+
+#define HANDLE_VALID_DATE \
+        temp_badness_score = abs(((temp_second - requested_second)) + \
+                                 ((temp_minute - requested_minute) * 60) + \
+                                 ((temp_hour - requested_hour) * 360) + \
+                                 ((temp_day - requested_day) * 8640) + \
+                                 ((month - requested_month) * 259200) + \
+                                 ((year - requested_year) * 94608000)); \
+        if (final_badness_score == -1 || temp_badness_score < final_badness_score) { \
+            final_price = temp_price;\
+            final_badness_score = temp_badness_score; \
+        }
+
+/*
+Input:
+Output: returns the requested price at the closest time to requested time within the deviation, -1 if no valid price
+Description: Should we ever save some of the price points incore?
+Assumptions: THIS SHOULD PROBABLY BE PUBLIC / TODO
+*/
+double logical_ticker::stock_price_at_time(int16_t requested_year, int16_t requested_month, int16_t requested_day, int16_t requested_hour, int16_t requested_minute, int16_t requested_second,
+                                           int16_t year_deviation = 0, int16_t month_deviation = 0, int16_t day_deviation = 0, int16_t hour_deviation = 0, int16_t minute_deviation = 0, int16_t second_deviation = 0) {
+    //https://cplusplus.com/reference/ctime/tm/
+    //requested_year = years since 1900
+    //requested_month = months since january 0-11
+    //requested_day = days of the month 1-31
+    //reqeusted_hour = hours since midnight 0-23
+    //requested_minute = minutes after the hour 0-59
+    //requested_second = seconds after the minute 0-59
+    int16_t max_year, min_year, closest_year = -1;
+    int16_t max_month, min_month, closest_month, loop_month_min, loop_month_max, loop_catch_min, loop_catch_max;
+    int16_t max_day, min_day, temp_day, closest_day;
+    int16_t max_hour, min_hour, temp_hour, closest_hour;
+    int16_t max_minute, min_minute, temp_minute, closest_minute;
+    int16_t max_second, min_second, temp_second, closest_second;
+    uint64_t temp_badness_score, final_badness_score = -1;//How far off the mark are we from a perfect request, the lower the better
+    std::fstream historical_price_file;
+    double temp_price, final_price = -1;
+    uint8_t days_per_month[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+    max_year = requested_year + year_deviation;
+    min_year = requested_second - year_deviation;
+
+    max_month = requested_month + month_deviation;
+    min_month = requested_month - month_deviation;
+
+    max_day = requested_day + day_deviation;
+    min_day = requested_day - day_deviation;
+
+    max_hour = requested_hour + hour_deviation;
+    min_hour = requested_hour - hour_deviation;
+
+    max_minute = requested_minute + minute_deviation;
+    min_minute = requested_minute - minute_deviation;
+
+    max_second = requested_second + second_deviation;
+    min_second = requested_second - second_deviation;
+
+    while (max_second > 59) {
+        max_minute++;
+        max_second -= 60;
+    }
+    while (min_second < 0) {
+        min_minute--;
+        min_second += 60;
+    }
+
+    while (max_minute > 59) {
+        max_hour++;
+        max_minute -= 60;
+    }
+    while (min_minute < 0) {
+        min_hour--;
+        min_minute += 60;
+    }
+
+    while (max_hour > 23) {
+        max_day++;
+        max_hour -= 24;
+    }
+    while (min_hour < 0) {
+        min_day--;
+        min_hour += 24;
+    }
+
+    /* Need to catch potential over/underflow constantly */
+
+    while (max_month > 11) {
+        max_year++;
+        max_month -= 12;
+    }
+    while (min_month < 0) {
+        min_year--;
+        min_month +=12;
+    }
+
+    while (max_day > days_per_month[max_month]) {
+        max_day -= days_per_month[max_month];
+        max_month++;
+        while (max_month > 11) {
+            max_year++;
+            max_month -= 12;
+        }
+    }
+    while (min_day < 0) {
+        min_day -= days_per_month[min_month];
+        min_month--;
+        while (min_month < 0) {
+            min_year--;
+            min_month +=12;
+        }
+    }
+
+    while (max_month > 11) {
+        max_year++;
+        max_month -= 12;
+    }
+    while (min_month < 0) {
+        min_year--;
+        min_month +=12;
+    }
+
+    for (int year = min_year; year <= max_year; year++) {
+        check_and_create_dirs("saved_info/historical_ticker_info/" + ticker() + "/" + std::to_string(year));
+
+        if (year == min_year && year == max_year) {
+            loop_month_min = loop_catch_min = min_month;
+            loop_month_max = loop_catch_max = max_month;
+        }
+        else if (year == max_year) {
+            loop_month_max = loop_catch_max = max_month;
+            loop_month_min = 0;
+            loop_catch_min = -1;//Unhittable
+        }
+        else if (year == min_year) {
+            loop_month_min = loop_catch_min = min_month;
+            loop_month_max = 11;
+            loop_catch_max = -1;//Unhittable
+        }
+        else {
+            loop_month_min = 0;
+            loop_catch_min = -1;//Unhittable
+            loop_month_max = 11;
+            loop_catch_max = -1;//Unhittable
+        }
+
+        for (int month = loop_month_min; month <= loop_month_max; month++) {
+            historical_price_file.open("saved_info/historical_ticker_info/" + _ticker + "/" + std::to_string(year) + "/" + std::to_string(month), std::ios::in);
+            if (month == loop_catch_max && month == loop_catch_min) {
+                while (historical_price_file >> temp_day >> temp_hour >> temp_minute >> temp_second >> temp_price) {
+                    if (temp_day < min_day) {
+                        //Not valid date
+                        continue;
+                    }
+                    if (temp_day > max_day) {
+                        //Hit end
+                        goto end;
+                    }
+                    //Valid date
+                    HANDLE_VALID_DATE;
+                }
+            }
+            else if (month == loop_catch_max) {
+                while (historical_price_file >> temp_day >> temp_hour >> temp_minute >> temp_second >> temp_price) {
+                    if (temp_day > max_day) {
+                        //Hit end
+                        goto end;
+                    }
+                    //Valid date
+                    HANDLE_VALID_DATE;
+                }
+            }
+            else if (month == loop_catch_min) {
+                while (historical_price_file >> temp_day >> temp_hour >> temp_minute >> temp_second >> temp_price) {
+                    if (temp_day < min_day) {
+                        //Hit end
+                        goto end;
+                    }
+                    //Valid date
+                    HANDLE_VALID_DATE;
+                }
+            } else {
+                while (historical_price_file >> temp_day >> temp_hour >> temp_minute >> temp_second >> temp_price) {
+                    //Valid date
+                    HANDLE_VALID_DATE;
+                }
+            }
+            historical_price_file.close();
+        }
+    }
+    //On hitting maximum range we goto here
+    end:
+    historical_price_file.close();
+
+    //Returns -1 if no satisfactory price can be found within the requested margin
+    return final_price;
 }

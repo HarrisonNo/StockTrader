@@ -1,12 +1,11 @@
+#ifndef LOGICAL_TICKER
+#define LOGICAL_TICKER
+
 #include <inttypes.h>
 #include <string>
 #include <list>
 #include <functional>
 #include "logical_account.h"
-
-
-#ifndef LOGICAL_TICKER
-#define LOGICAL_TICKER
 
 
 class logical_ticker {
@@ -36,6 +35,7 @@ class logical_ticker {
         void _modify_transaction_list(int32_t amount, double price = -1);//Amount to add/remove from transaction list
         void _load_transactions();
         void _save_transactions();
+        void _save_stock_price_at_time(double stock_price, time_t current_time = 0);
 
     //Abstract data types
         class list_insert {
@@ -64,8 +64,6 @@ class logical_ticker {
                 uint64_t UNUSED:26;
                 double price;
         };
-        
-        void _save_historical_price_insert();
 
     public:
         logical_ticker(std::string input_ticker);
@@ -75,6 +73,10 @@ class logical_ticker {
         uint32_t sell_amount(uint32_t amount);
 
         double stock_price();
+        double stock_price_at_time(int16_t requested_year, int16_t requested_month, int16_t requested_day, int16_t requested_hour, int16_t requested_minute, int16_t requested_second,
+                                   int16_t year_deviation = 0, int16_t month_deviation = 0, int16_t day_deviation = 0, int16_t hour_deviation = 0, int16_t minute_deviation = 0, int16_t second_deviation = 0);
+
+        inline std::string ticker();
 
         inline void modify_selling_at_loss(bool enabled);//Allows the user to set a default behavior for whether we are allowed to sell shares at a loss, is overriden by user specification at sell time
 
