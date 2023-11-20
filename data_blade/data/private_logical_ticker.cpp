@@ -1,7 +1,7 @@
 #include <thread>
 #include <exception>
 #include <fstream>
-#include "wrapper_api.h"
+#include "wrapper_class.h"
 #include "assert_and_verify.h"
 #include "directory_file_saving.h"
 #include "logical_ticker.h"
@@ -85,7 +85,14 @@ bool logical_ticker::_double_check_transaction(uint32_t expected_held_amount, ui
     for (uint8_t attempts = 1; attempts <= 3; attempts++) {//Attempt the following three times
 
         std::this_thread::sleep_for(std::chrono::seconds(DOUBLE_CHECK_TRANSACTION_SLEEP));//Immediately go to sleep to check everything
-        _amount_owned = wrapper_amount_owned(_ticker);
+        try {
+            _amount_owned = _tied_account->get_wrapper_class()->wrapper_amount_owned(_ticker);
+        }
+        catch (std::exception &e){
+            ASSERT(!("amount_owned wrapper failed with exception e:",e.what()));
+            //We failed to contact the wrapper, we'll not alter our _amount_owed so lets just skip, maybe go to sleep for extra time?
+            continue;
+        }
 
         if (_amount_owned == expected_held_amount) {//The transaction went through, we are cash money
             success = 1;//Complete success
@@ -119,6 +126,8 @@ bool logical_ticker::_double_check_transaction(uint32_t expected_held_amount, ui
         return true;
     }
     //Total failure OR Partial success, partial failure
+    _tied_account->mark_known_cash_unkown();
+    _tied_account->available_cash();//mark amount of cash as unknown and immediately force it to update
     return false;
 }
 
@@ -249,4 +258,108 @@ void logical_ticker::_save_stock_price_at_time(double stock_price, time_t curren
     //Save to file at specified position
     historical_price_file << time_info->tm_mday << "\t" <<  time_info->tm_hour << "\t" << time_info->tm_min << "\t" << time_info->tm_sec << "\t" << stock_price << "\n";
     return;
+}
+
+
+inline void _catch_invalid_dates(int16_t * year, int16_t * month, int16_t * day, int16_t * hour, int16_t * minute, int16_t * second) {
+    time_t current_time;
+    struct tm * time_info;
+
+    time(&current_time);
+    time_info = localtime(&current_time);
+    if (*year == INT16_MAX || *year == INT16_MIN) {
+        *year = time_info->tm_year;
+    }
+    if (*month == INT16_MAX || *month == INT16_MIN) {
+        *month = time_info->tm_mon;
+    }
+    if (*day == INT16_MAX || *day == INT16_MIN) {
+        *day = time_info->tm_mday;
+    }
+    if (*hour == INT16_MAX || *hour == INT16_MIN) {
+        *hour = time_info->tm_hour;
+    }
+    if (*minute == INT16_MAX || *minute == INT16_MIN) {
+        *minute = time_info->tm_min;
+    }
+    if (*second == INT16_MAX || *second == INT16_MIN) {
+        *second = time_info->tm_sec;
+    }
+}
+
+
+inline void _date_corrections(int16_t * min_year, int16_t * min_month, int16_t * min_day, int16_t * min_hour, int16_t * min_minute, int16_t * min_second,
+                              int16_t * max_year, int16_t * max_month, int16_t * max_day, int16_t * max_hour, int16_t * max_minute, int16_t * max_second) {
+    //https://cplusplus.com/reference/ctime/tm/
+    //requested_year = years since 1900
+    //requested_month = months since january 0-11
+    //requested_day = days of the month 1-31
+    //reqeusted_hour = hours since midnight 0-23
+    //requested_minute = minutes after the hour 0-59
+    //requested_second = seconds after the minute 0-59
+    uint8_t days_per_month[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+    while (*max_second > 59) {
+        *max_minute++;
+        *max_second -= 60;
+    }
+    while (*min_second < 0) {
+        *min_minute--;
+        *min_second += 60;
+    }
+
+    while (*max_minute > 59) {
+        *max_hour++;
+        *max_minute -= 60;
+    }
+    while (*min_minute < 0) {
+        *min_hour--;
+        *min_minute += 60;
+    }
+
+    while (*max_hour > 23) {
+        *max_day++;
+        *max_hour -= 24;
+    }
+    while (*min_hour < 0) {
+        *min_day--;
+        *min_hour += 24;
+    }
+
+    /* Need to catch potential over/underflow constantly */
+
+    while (*max_month > 11) {
+        *max_year++;
+        *max_month -= 12;
+    }
+    while (min_month < 0) {
+        *min_year--;
+        *min_month +=12;
+    }
+
+    while (*max_day > days_per_month[*max_month]) {
+        *max_day -= days_per_month[*max_month];
+        *max_month++;
+        while (*max_month > 11) {
+            *max_year++;
+            *max_month -= 12;
+        }
+    }
+    while (*min_day < 0) {
+        *min_day -= days_per_month[*min_month];
+        *min_month--;
+        while (*min_month < 0) {
+            *min_year--;
+            *min_month +=12;
+        }
+    }
+
+    while (*max_month > 11) {
+        *max_year++;
+        *max_month -= 12;
+    }
+    while (*min_month < 0) {
+        *min_year--;
+        *min_month +=12;
+    }
 }
