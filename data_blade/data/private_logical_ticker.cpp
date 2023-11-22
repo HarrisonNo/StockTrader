@@ -119,6 +119,7 @@ bool logical_ticker::_double_check_transaction(uint32_t expected_held_amount, ui
 
     _known_stock_amount_owned_locked = 0;//Unlock the value, we have gone as far as reasonably possible
     _modify_transaction_list(differential);
+    _tied_account->available_cash(true);//Force account to double check amount of cash held, as that also corrects projected_cash
 
     //Finished with attempts
     if (success == 1) {//Total success

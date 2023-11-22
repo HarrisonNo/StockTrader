@@ -33,6 +33,7 @@ class logical_account {
         inline key _generate_key(std::string ticker, uint32_t amount);
 
         void _async_buy_stock_wrapper(std::string ticker, uint32_t amount, key async_key);
+        void _async_sell_stock_wrapper(std::string ticker, uint32_t amount, key async_key);
 
     //Abstract data types
         class keyed_list_insert {
@@ -58,14 +59,14 @@ class logical_account {
 
         inline void mark_known_cash_unkown() {_known_cash_amount = 0;}
 
-        double available_cash();
+        double available_cash(bool force_wrapper_check = false);
 
         uint32_t buy_stock(std::string ticker, uint32_t amount);
         uint32_t sell_stock(std::string ticker, uint32_t amount);
 
-        inline uint32_t get_key_value(key requested_key, bool auto_delete_kli = true);
+        inline uint32_t get_key_value(key requested_key, bool auto_delete_entry = true);
 
-        inline bool key_has_returned_value(key requested_key) {keyed_list_insert * kli = _get_kli_from_list(requested_key); return kli->has_return_value;}
+        inline bool key_has_returned_value(key requested_key) {keyed_list_insert * kli = _get_kli_from_list(requested_key); return kli ? kli->has_return_value : false;}
 
         key async_buy_stock(std::string ticker, uint32_t amount);//Generate and return a key then dispatch thread, key is used to access list(?) which holds the desired returned value
         key async_sell_stock(std::string ticker, uint32_t amount);

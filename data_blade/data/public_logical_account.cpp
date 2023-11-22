@@ -40,8 +40,8 @@ uint32_t logical_account::buy_stock(std::string ticker, uint32_t amount) {
     amount_purchased = lt->purchase_amount(amount);
 
     _cash_lock.lock();
-    _projected_cash += (amount - amount_purchased) * stock_price;//Refund any we didn't buy
     if (_number_of_projections) {//We may have just checked the available cash and reset projections
+        _projected_cash += (amount - amount_purchased) * stock_price;//Refund any we didn't buy
         _number_of_projections--;
         _cash -= amount_purchased * stock_price;
     }
@@ -82,7 +82,37 @@ Description:
 Assumptions:
 */
 uint32_t logical_account::sell_stock(std::string ticker, uint32_t amount) {
-    //TODO
+    double total_projected_profit, stock_price;
+    uint32_t amount_purchased;
+    logical_ticker * lt = _get_or_create_logical_ticker(ticker);
+
+    if (amount > lt->amount_owned()) {
+        amount = lt->amount_owned();
+    }
+    if (amount == 0) {
+        return 0;
+    }
+
+    stock_price = lt->stock_price();
+    total_projected_profit = amount * stock_price;
+
+    _cash_lock.lock();
+    _projected_cash += total_projected_profit;
+    _number_of_projections++;
+    _cash_lock.unlock();
+
+    amount_purchased = lt->purchase_amount(amount);
+
+    _cash_lock.lock();
+    if (_number_of_projections) {//We may have just checked the available cash and reset projections
+        _projected_cash -= (amount - amount_purchased) * stock_price;//Subtract any we didn't sell
+        _number_of_projections--;
+        _cash += amount_purchased * stock_price;
+    }
+    _known_cash_amount = 0;
+    _cash_lock.unlock();
+
+    return amount_purchased;
 }
 
 
@@ -93,7 +123,19 @@ Description:
 Assumptions:
 */
 key logical_account::async_sell_stock(std::string ticker, uint32_t amount) {
-    //TODO
+    //Generate key
+    uint32_t stock_bought;
+    key async_key = _generate_key(ticker, amount);
+
+    //Store key in list
+    keyed_list_insert * kli = _create_keyed_list_node(async_key);
+    _keyed_transactions.push_back(kli);//Have to do inline because user may immediately check on the status of the key
+
+    //Start thread
+    std::thread sep_thread (logical_account::_async_sell_stock_wrapper, ticker, amount, async_key);
+
+    //Can just return key here
+    return async_key;
 }
 
 
@@ -103,9 +145,9 @@ Output: returns the logical ticker if it exists, NULL if otherwise
 Description:
 Assumptions:
 */
-double logical_account::available_cash() {
+double logical_account::available_cash(bool force_wrapper_check = false) {
     time_t current_time = time(NULL);
-    if (!_known_cash_amount) {
+    if (!_known_cash_amount || force_wrapper_check) {
         _number_of_projections = 0;
 
         try {
@@ -125,4 +167,30 @@ double logical_account::available_cash() {
     }
     //Also need other stipulations like if it has been enough time since last check etc
     return _cash;
+}
+
+
+/*
+Input:
+Output:
+Description:
+Assumptions:
+*/
+inline uint32_t logical_account::get_key_value(key requested_key, bool auto_delete_entry = true) {
+    uint32_t return_value;
+    keyed_list_insert * kli;
+
+    for (std::list<keyed_list_insert*>::iterator it = _keyed_transactions.begin(); it != _keyed_transactions.end(); ++it) {
+        kli = (*it);
+        return_value = kli->return_value;
+        if ((*it)->stored_key == requested_key && (*it)->has_return_value) {
+            if (auto_delete_entry) {
+                _keyed_transactions.erase(it);
+                free(kli);
+            }
+            break;
+        }
+    }
+
+    return return_value;
 }
