@@ -1,7 +1,6 @@
 #include <thread>
 #include <exception>
 #include <fstream>
-#include "wrapper_class.h"
 #include "assert_and_verify.h"
 #include "directory_file_saving.h"
 #include "logical_ticker.h"
@@ -18,10 +17,11 @@ Assumptions:
 logical_ticker::logical_ticker(std::string input_ticker) {
     _time_last_checked_price = 0;
     _time_last_checked_amount = 0;
+    _time_last_executed_transaction = 0;
     _known_stock_amount_owned = 0;
-    _known_stock_amount_owned_locked = 0;
     _ticker = input_ticker;
     _can_sell_at_loss_default = 0;
+    _transactions_list_stock_count = 0;
     _load_transactions();
 }
 
@@ -45,6 +45,7 @@ void logical_ticker::_load_transactions() {
     while (transaction_file >> temp_amount >> temp_price) {
         temp_list_insert = _create_list_node(temp_amount, temp_price);
         _transactions.push_back(temp_list_insert);
+        _transactions_list_stock_count += temp_amount;
     }
     transaction_file.close();
 }
@@ -71,76 +72,12 @@ void logical_ticker::_save_transactions() {
 
 /*
 Input:
-Output: bool did everything go according to plan
-Description: double checks that a transaction 100% went through, then updates the various stats and lists accordingly as we only then consider it completed
-Assumptions:
-*/
-bool logical_ticker::_double_check_transaction(uint32_t expected_held_amount, uint32_t initial_held_amount) {
-    int8_t success = -1;//Complete failure
-    int64_t previous_differential = 0;
-    int64_t differential = 0;
-
-    ASSERT(!_known_stock_amount_owned && _known_stock_amount_owned_locked);//Should have been set to 0 and locked prior to entering here
-
-    for (uint8_t attempts = 1; attempts <= 3; attempts++) {//Attempt the following three times
-
-        std::this_thread::sleep_for(std::chrono::seconds(DOUBLE_CHECK_TRANSACTION_SLEEP));//Immediately go to sleep to check everything
-        try {
-            _amount_owned = _tied_account->get_wrapper_class()->wrapper_amount_owned(_ticker);
-        }
-        catch (std::exception &e){
-            ASSERT(!("amount_owned wrapper failed with exception e:",e.what()));
-            //We failed to contact the wrapper, we'll not alter our _amount_owed so lets just skip, maybe go to sleep for extra time?
-            continue;
-        }
-
-        if (_amount_owned == expected_held_amount) {//The transaction went through, we are cash money
-            success = 1;//Complete success
-            differential = _amount_owned - initial_held_amount;
-            break;
-        }
-
-        //We don't have the expected amount past here
-
-        if (_amount_owned == initial_held_amount) {//We at least aren't partially off, go ahead and go for another attempt
-            continue;
-        }
-
-        //We partially executed, not good
-        //Calculate the partial execution
-        differential = _amount_owned - initial_held_amount;
-        if (differential != previous_differential) {//If we technically executed on more shares than the last attempt go ahead for yet another attempt, potentially bypassing the 3-attempt system
-            attempts--;
-            previous_differential = differential;
-        }
-        success = 0;//Partial success, partial failure
-        //Stick around for another attempt in case we do happen to execute some more of the initial order
-    }
-
-    _known_stock_amount_owned_locked = 0;//Unlock the value, we have gone as far as reasonably possible
-    _modify_transaction_list(differential);
-    _tied_account->available_cash(true);//Force account to double check amount of cash held, as that also corrects projected_cash
-
-    //Finished with attempts
-    if (success == 1) {//Total success
-        _known_stock_amount_owned = 1;//We definitively know the amount of stock we have
-        return true;
-    }
-    //Total failure OR Partial success, partial failure
-    _tied_account->mark_known_cash_unkown();
-    _tied_account->available_cash();//mark amount of cash as unknown and immediately force it to update
-    return false;
-}
-
-
-/*
-Input:
 Output:
 Description:
 Assumptions:
 */
 inline
-void logical_ticker::_modify_transaction_list(int32_t amount, double price = -1) {
+void logical_ticker::_modify_transaction_list(int64_t amount, double price = -1) {
     if (amount == 0) {
         return;
     }
@@ -150,6 +87,7 @@ void logical_ticker::_modify_transaction_list(int32_t amount, double price = -1)
     //Adding to list
     if (amount > 0) {
         bool inserted = false;
+
         //Need to insert ordered, no easy way without using std::set :(
         for (std::list<list_insert*>::iterator itr = _transactions.begin() ; itr != _transactions.end(); ++itr) {
             //If the itr we are looking at has a greater price than the one we have then insert here
@@ -169,12 +107,16 @@ void logical_ticker::_modify_transaction_list(int32_t amount, double price = -1)
         if (!inserted) {
             _transactions.push_back(_create_list_node(amount, price));
         }
+        _transactions_list_stock_count += amount;
     }
     //Removing from list
     else {
+        uint_fast32_t og_amount = amount;
+        
         amount *= -1;//Amount must have been negative
+
         while (amount > 0 && !(_transactions.empty())) {
-            list_insert * old_transaction = _transactions.front();
+            list_insert * old_transaction = _transactions.back();
             bool sell_from_transaction = false;
             if (old_transaction->price > price) {
                 if (_can_sell_at_loss_default) {
@@ -187,7 +129,7 @@ void logical_ticker::_modify_transaction_list(int32_t amount, double price = -1)
             if (sell_from_transaction) {
                 if (amount >= old_transaction->amount) {
                     amount -= old_transaction->amount;
-                    _transactions.pop_front();//Remove node
+                    _transactions.pop_back();//Remove node
                     _delete_list_node(old_transaction);//And delete it
                 } else {
                     old_transaction->amount -= amount;
@@ -197,7 +139,14 @@ void logical_ticker::_modify_transaction_list(int32_t amount, double price = -1)
                 break;//Can go no further
             }
         }
+        if (og_amount > _transactions_list_stock_count) {
+            ASSERT(!"amount_sold is more than known transaction_count in _modify_transaction_list");
+            _transactions_list_stock_count = 0;
+        } else {
+            _transactions_list_stock_count -= og_amount;
+        }
     }
+    _save_transactions();
     return;
 }
 
@@ -262,7 +211,14 @@ void logical_ticker::_save_stock_price_at_time(double stock_price, time_t curren
 }
 
 
-inline void _catch_invalid_dates(int16_t * year, int16_t * month, int16_t * day, int16_t * hour, int16_t * minute, int16_t * second) {
+/*
+Input:
+Output:
+Description:
+Assumptions:
+*/
+inline 
+void _catch_invalid_dates(int16_t * year, int16_t * month, int16_t * day, int16_t * hour, int16_t * minute, int16_t * second) {
     time_t current_time;
     struct tm * time_info;
 
@@ -289,6 +245,12 @@ inline void _catch_invalid_dates(int16_t * year, int16_t * month, int16_t * day,
 }
 
 
+/*
+Input:
+Output:
+Description:
+Assumptions:
+*/
 inline void _date_corrections(int16_t * min_year, int16_t * min_month, int16_t * min_day, int16_t * min_hour, int16_t * min_minute, int16_t * min_second,
                               int16_t * max_year, int16_t * max_month, int16_t * max_day, int16_t * max_hour, int16_t * max_minute, int16_t * max_second) {
     //https://cplusplus.com/reference/ctime/tm/

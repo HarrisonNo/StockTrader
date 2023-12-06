@@ -1,9 +1,18 @@
 #include <thread>
 #include "logical_account.h"
-#include "wrapper_class.h"
 #include "assert_and_verify.h"
 
 
+/*
+Input:
+Output:
+Description:
+Assumptions:
+*/
+logical_account::logical_account() {
+    _number_of_projections = 0;
+    _time_last_checked_cash = 0;
+}
 
 
 /*
@@ -14,14 +23,15 @@ Assumptions:
 */
 uint32_t logical_account::buy_stock(std::string ticker, uint32_t amount) {
     double total_projected_cost, stock_price;
-    uint32_t amount_purchased;
+    uint_fast32_t amount_purchased, amount_initially_held;
+    logical_ticker * lt = _get_or_create_logical_ticker(ticker);
 
     if (amount == 0) {
         return 0;
     }
 
-    logical_ticker * lt = _get_or_create_logical_ticker(ticker);
     stock_price = lt->stock_price();
+    amount_initially_held = lt->amount_owned();
     total_projected_cost = amount * stock_price;
 
     if (total_projected_cost > _projected_cash) {
@@ -60,11 +70,10 @@ Assumptions:
 */
 key logical_account::async_buy_stock(std::string ticker, uint32_t amount) {
     //Generate key
-    uint32_t stock_bought;
     key async_key = _generate_key(ticker, amount);
 
     //Store key in list
-    keyed_list_insert * kli = _create_keyed_list_node(async_key);
+    keyed_list_insert * kli = new keyed_list_insert(async_key);
     _keyed_transactions.push_back(kli);//Have to do inline because user may immediately check on the status of the key
 
     //Start thread
@@ -83,7 +92,7 @@ Assumptions:
 */
 uint32_t logical_account::sell_stock(std::string ticker, uint32_t amount) {
     double total_projected_profit, stock_price;
-    uint32_t amount_purchased;
+    uint_fast32_t amount_sold, amount_initially_held;
     logical_ticker * lt = _get_or_create_logical_ticker(ticker);
 
     if (amount > lt->amount_owned()) {
@@ -93,6 +102,7 @@ uint32_t logical_account::sell_stock(std::string ticker, uint32_t amount) {
         return 0;
     }
 
+    amount_initially_held = lt->amount_owned();
     stock_price = lt->stock_price();
     total_projected_profit = amount * stock_price;
 
@@ -101,18 +111,18 @@ uint32_t logical_account::sell_stock(std::string ticker, uint32_t amount) {
     _number_of_projections++;
     _cash_lock.unlock();
 
-    amount_purchased = lt->purchase_amount(amount);
+    amount_sold = lt->sell_amount(amount);
 
     _cash_lock.lock();
     if (_number_of_projections) {//We may have just checked the available cash and reset projections
-        _projected_cash -= (amount - amount_purchased) * stock_price;//Subtract any we didn't sell
+        _projected_cash -= (amount - amount_sold) * stock_price;//Subtract any we didn't sell
         _number_of_projections--;
-        _cash += amount_purchased * stock_price;
+        _cash += amount_sold * stock_price;
     }
     _known_cash_amount = 0;
     _cash_lock.unlock();
 
-    return amount_purchased;
+    return amount_sold;
 }
 
 
@@ -124,11 +134,10 @@ Assumptions:
 */
 key logical_account::async_sell_stock(std::string ticker, uint32_t amount) {
     //Generate key
-    uint32_t stock_bought;
     key async_key = _generate_key(ticker, amount);
 
     //Store key in list
-    keyed_list_insert * kli = _create_keyed_list_node(async_key);
+    keyed_list_insert * kli = new keyed_list_insert(async_key);
     _keyed_transactions.push_back(kli);//Have to do inline because user may immediately check on the status of the key
 
     //Start thread
@@ -145,26 +154,32 @@ Output: returns the logical ticker if it exists, NULL if otherwise
 Description:
 Assumptions:
 */
-double logical_account::available_cash(bool force_wrapper_check = false) {
+double logical_account::available_cash(bool force_check = false) {
     time_t current_time = time(NULL);
-    if (!_known_cash_amount || force_wrapper_check) {
-        _number_of_projections = 0;
+    double internal_cash;
 
-        try {
-            _cash = get_wrapper_class()->wrapper_account_cash();
-            _projected_cash = _cash;
-            _known_cash_amount = 1;
-        }
-        catch (std::exception &e){
-            ASSERT(!("amount_owned wrapper failed with exception e:",e.what()));
-            _cash = 0;
-        }
-        _projected_cash = _cash;
+    if (_known_cash_amount && !force_check && ((current_time - _time_last_checked_cash) > MAX_KNOWN_SEC_TIMEOUT)) {
+        return _cash;
     }
-    if (_number_of_projections) {
-        //Reset projections
-        _number_of_projections = 0;
+
+    try {
+        //Don't grab lock while waiting on wrapper, cannot guarentee that this will execute quickly
+        internal_cash = get_wrapper_class()->wrapper_account_cash();
     }
+    catch (std::exception &e){
+        ASSERT(!("amount_owned wrapper failed with exception e:",e.what()));
+        _cash_lock.unlock();
+        return 0;
+    }
+
+    _cash_lock.lock();
+    _cash = internal_cash;
+    _projected_cash = _cash;
+    _known_cash_amount = 1;
+    _time_last_checked_cash = current_time;
+    _number_of_projections = 0;
+    _cash_lock.unlock();
+
     //Also need other stipulations like if it has been enough time since last check etc
     return _cash;
 }
@@ -177,7 +192,7 @@ Description:
 Assumptions:
 */
 inline uint32_t logical_account::get_key_value(key requested_key, bool auto_delete_entry = true) {
-    uint32_t return_value;
+    uint_fast32_t return_value = 0;
     keyed_list_insert * kli;
 
     for (std::list<keyed_list_insert*>::iterator it = _keyed_transactions.begin(); it != _keyed_transactions.end(); ++it) {
@@ -193,4 +208,25 @@ inline uint32_t logical_account::get_key_value(key requested_key, bool auto_dele
     }
 
     return return_value;
+}
+
+
+/*
+Input:
+Output:
+Description:
+Assumptions:
+*/
+inline uint32_t logical_account::wait_for_key_value(key requested_key, bool auto_delete_entry = true) {
+    keyed_list_insert * kli = _get_kli_from_list(requested_key);
+    uint_fast32_t iterations = 2;
+
+    if (kli != NULL) {
+        while(!(kli->has_return_value) && iterations < UINT16_MAX) {
+            iterations *= 2;
+            std::this_thread::sleep_for(std::chrono::milliseconds(iterations));//Highly inefficient, may increase from 5
+        }
+    }
+
+    return kli->return_value;
 }

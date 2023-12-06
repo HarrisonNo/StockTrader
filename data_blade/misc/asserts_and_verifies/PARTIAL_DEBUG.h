@@ -1,1 +1,0 @@
-#define PARTIAL_DEBUG 0

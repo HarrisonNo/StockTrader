@@ -1,15 +1,6 @@
 #include "logical_account.h"
+#include <thread>
 
-
-/*
-Input:
-Output:
-Description:
-Assumptions:
-*/
-logical_account::logical_account() {
-    _number_of_projections = 0;
-}
 
 
 
