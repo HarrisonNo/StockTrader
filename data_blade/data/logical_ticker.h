@@ -84,10 +84,9 @@ class logical_ticker {
         double stock_price(bool force_check = false);
         double stock_price_at_time(int16_t requested_year, int16_t requested_month, int16_t requested_day, int16_t requested_hour, int16_t requested_minute, int16_t requested_second,
                                    int16_t year_deviation = 0, int16_t month_deviation = 0, int16_t day_deviation = 0, int16_t hour_deviation = 0, int16_t minute_deviation = 0, int16_t second_deviation = 0);
-        void stock_prices_between_times(uint64_t calculation_limit, double * array_bank, int16_t min_year = INT16_MIN, int16_t min_month = INT16_MIN, int16_t min_day = INT16_MIN, int16_t min_hour = INT16_MIN, int16_t min_minute = INT16_MIN, int16_t min_second = INT16_MIN,
+        uint64_t stock_prices_between_times(uint64_t calculation_limit, double * array_bank, int16_t min_year = INT16_MIN, int16_t min_month = INT16_MIN, int16_t min_day = INT16_MIN, int16_t min_hour = INT16_MIN, int16_t min_minute = INT16_MIN, int16_t min_second = INT16_MIN,
                                                                                          int16_t max_year = INT16_MIN, int16_t max_month = INT16_MIN, int16_t max_day = INT16_MIN, int16_t max_hour = INT16_MIN, int16_t max_minute = INT16_MIN, int16_t max_second = INT16_MIN);
 
-        bool double_check_transaction_SINGLE_TIME(uint32_t expected_held_amount, uint8_t retry_attempts_remaining);
         bool heartbeat();//Tests several calls from the wrapper to check if many operations are still possible
 };
 

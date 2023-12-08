@@ -27,31 +27,28 @@
     #define DEBUG 0
 #endif
 
+//May want to sub out definitions for printing and crashing later
+//T represents failure type i.e. (ASSERT or VERIFY)
+#define FAIL_PRINT(T, X) printf("Tripped "#T" in file: %s line: %d\n"#T":",__FILE__,__LINE__); std::cout<<std::to_string(X)<<std::endl;
+#define CRASH_PROGRAM std::exit(-1);
 
 
 //ASSERT and VERIFY definitions
 #if ASSERT_CRASH
-    #define ASSERT(X) if (!(X)) {printf("Tripped ASSERT in file: %s line: %d\n",__FILE__,__LINE__); std::cout<<"ASSERT:"<<std::to_string(X)<<std::endl; std::exit(-1);}
+    #define ASSERT(X) if (!(X)) {FAIL_PRINT(ASSERT, X) CRASH_PROGRAM}
 #else //DO NOT CRASH ON ASSERT
     #if VERBOSE
-        #define ASSERT(X) if (!(X)) {printf("Tripped ASSERT in file: %s line: %d\n",__FILE__,__LINE__); std::cout<<"ASSERT:"<<std::to_string(X)<<std::endl;}
+        #define ASSERT(X) if (!(X)) {FAIL_PRINT(ASSERT, X)}
     #else
         #define ASSERT(X)
     #endif
 #endif
 
 #if VERIFY_CRASH
-    #define VERIFY(X) if (!(X)) {printf("Tripped VERIFY in file: %s line: %d\n",__FILE__,__LINE__); std::cout<<"VERIFY:"<<std::to_string(X)<<std::endl; std::exit(-1);}
+    #define VERIFY(X) if (!(X)) {FAIL_PRINT(VERIFY, X) CRASH_PROGRAM}
 #else //DO NOT CRASH ON VERIFY
-    #define VERIFY(X) if (!(X)) {printf("Tripped VERIFY in file: %s line: %d\n",__FILE__,__LINE__); std::cout<<"VERIFY:"<<std::to_string(X)<<std::endl;}
+    #define VERIFY(X) if (!(X)) {FAIL_PRINT(VERIFY, X)}
 #endif
-
-//PROD treats ASSERT trips as acceptable pathways and VERIFY trips as recoverable failures(user is still notified via email/text TODO)
-#if PROD
-    #define ASSERT(X) 
-    #define VERIFY(X) if (!(X)) {printf("Tripped VERIFY in file: %s line: %d\n",__FILE__,__LINE__); std::cout<<"VERIFY:"<<std::to_string(X)<<std::endl;}
-#endif
-
 
 
 //DPRINT definiton

@@ -4,6 +4,7 @@
 #include "wrapper_class.h"
 #include "assert_and_verify.h"
 #include "directory_file_saving.h"
+#include "debug_api.h"
 
 #if DEBUG_API
 
@@ -54,7 +55,7 @@ uint32_t logical_ticker::amount_owned(bool force_check = false) {
     discrepancy = _transactions_list_stock_count - _amount_owned;
     //Catch discrepancy with transactions
     if (discrepancy != 0) {
-        _modify_transaction_list(_transactions_list_stock_count - _amount_owned);
+        _modify_transaction_list(_amount_owned - _transactions_list_stock_count);
         _known_stock_amount_owned = 0;//We had to modify the list, we may not know the real amount
     } else {
         _known_stock_amount_owned = 1;
@@ -238,10 +239,10 @@ inline std::string logical_ticker::ticker() {
         }
 
 /*
-Input:
-Output: returns the requested price at the closest time to requested time within the deviation, -1 if no valid price
+Input: Takes in requested year, month, day, hour, minute, and second with a deviation variable for each. Any unspecified requested variable will be replaced by current time. Normal deviation is 0
+Output: Returns the requested price at the closest time to requested time within the deviation, -1 if no valid price
 Description: Should we ever save some of the price points incore?
-Assumptions: THIS SHOULD PROBABLY BE PUBLIC / TODO
+Assumptions:
 */
 double logical_ticker::stock_price_at_time(int16_t requested_year = INT16_MIN, int16_t requested_month = INT16_MIN, int16_t requested_day = INT16_MIN, int16_t requested_hour = INT16_MIN, int16_t requested_minute = INT16_MIN, int16_t requested_second = INT16_MIN,
                                            int16_t year_deviation = 0, int16_t month_deviation = 0, int16_t day_deviation = 0, int16_t hour_deviation = 0, int16_t minute_deviation = 0, int16_t second_deviation = 0) {
@@ -364,12 +365,12 @@ double logical_ticker::stock_price_at_time(int16_t requested_year = INT16_MIN, i
 
 /*
 Input:
-Output:
-Description:
+Output: fills array_bank with valid stock prices and returns the number of prices it found in time range
+Description: TODO move these time based funcs to another file and separate from class?
 Assumptions:
 */
-void logical_ticker::stock_prices_between_times(uint64_t calculation_limit, double * array_bank, int16_t min_year = INT16_MIN, int16_t min_month = INT16_MIN, int16_t min_day = INT16_MIN, int16_t min_hour = INT16_MIN, int16_t min_minute = INT16_MIN, int16_t min_second = INT16_MIN,
-                                                                                                 int16_t max_year = INT16_MIN, int16_t max_month = INT16_MIN, int16_t max_day = INT16_MIN, int16_t max_hour = INT16_MIN, int16_t max_minute = INT16_MIN, int16_t max_second = INT16_MIN) {
+uint64_t logical_ticker::stock_prices_between_times(uint64_t calculation_limit, double * array_bank, int16_t min_year = INT16_MIN, int16_t min_month = INT16_MIN, int16_t min_day = INT16_MIN, int16_t min_hour = INT16_MIN, int16_t min_minute = INT16_MIN, int16_t min_second = INT16_MIN,
+                                                                                                     int16_t max_year = INT16_MIN, int16_t max_month = INT16_MIN, int16_t max_day = INT16_MIN, int16_t max_hour = INT16_MIN, int16_t max_minute = INT16_MIN, int16_t max_second = INT16_MIN) {
     uint16_t loop_month_max, loop_month_min, loop_catch_min, loop_catch_max;
     uint16_t temp_day, temp_hour, temp_minute, temp_second, temp_price;
     uint64_t array_bank_cnt = 0;
@@ -383,7 +384,6 @@ void logical_ticker::stock_prices_between_times(uint64_t calculation_limit, doub
         return;
     }
 
-    //TODO, keeping these in ticker for potential multithreading?
     for (int year = min_year; year <= max_year; year++) {
         check_and_create_dirs("saved_info/historical_ticker_info/" + ticker() + "/" + std::to_string(year));
 
