@@ -1,7 +1,7 @@
 #include <thread>
 #include "logical_account.h"
 #include "assert_and_verify.h"
-
+#include "debug_api_and_wrapper.h"
 
 /*
 Input:
@@ -12,6 +12,7 @@ Assumptions:
 logical_account::logical_account() {
     _number_of_projections = 0;
     _time_last_checked_cash = 0;
+    //TODO add in loading saved ticker and other vals?
 }
 
 
@@ -163,8 +164,7 @@ double logical_account::available_cash(bool force_check = false) {
     }
 
     try {
-        //Don't grab lock while waiting on wrapper, cannot guarentee that this will execute quickly
-        internal_cash = get_wrapper_class()->wrapper_account_cash();
+        internal_cash = ACCOUNT_CASH;
     }
     catch (std::exception &e){
         ASSERT(!("amount_owned wrapper failed with exception e:",e.what()));

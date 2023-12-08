@@ -1,24 +1,9 @@
 #include <thread>
 #include <fstream>
 #include "logical_ticker.h"
-#include "wrapper_class.h"
 #include "assert_and_verify.h"
 #include "directory_file_saving.h"
-#include "debug_api.h"
-
-#if DEBUG_API
-
-#define AMOUNT_OWNED_CALL(ticker) debug_amount_owned(ticker);//THIS SHOULD BE AN STD::FUNC WHICH IS FOUND AS A GLOBAL VAR IN A TESTING FILE, THAT WAY IT CAN BE DEFINED AND REDEFINED AT WILL
-#define STOCK_PRICE_CALL(ticker) debug_stock_price(ticker);//THIS SHOULD BE AN STD::FUNC WHICH IS FOUND AS A GLOBAL VAR IN A TESTING FILE, THAT WAY IT CAN BE DEFINED AND REDEFINED AT WILL
-
-#else //Not DEBUG_API
-
-
-#define AMOUNT_OWNED_CALL(ticker) _tied_account->get_wrapper_class()->wrapper_amount_owned(_ticker);
-#define STOCK_PRICE_CALL(ticker) _tied_account->get_wrapper_class()->wrapper_stock_price(ticker);
-
-
-#endif//Not either PROD or DEBUG_API
+#include "debug_api_and_wrapper.h"
 
 
 /*
@@ -44,7 +29,7 @@ uint32_t logical_ticker::amount_owned(bool force_check = false) {
     try {
         returned_amount_owned = AMOUNT_OWNED_CALL(_ticker);
     }
-    catch (std::exception &e){
+    catch (std::exception &e) {
         ASSERT(!("amount_owned wrapper failed with exception e:",e.what()));
          _known_stock_amount_owned = 0;
         return 0;
@@ -81,7 +66,7 @@ double logical_ticker::stock_price(bool force_check = false) {
     try {
         _stock_price = STOCK_PRICE_CALL(_ticker);
     }
-    catch (std::exception &e){
+    catch (std::exception &e) {
         ASSERT(!("stock_price wrapper failed with exception e:",e.what()));
         //_trigger_wrapper_failure();//Increments var and checks if enough failures have occured within X seconds, if so then trigger a clean shutdown //TODO
         return 0;
