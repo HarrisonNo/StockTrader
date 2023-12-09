@@ -1,9 +1,9 @@
+#include "global_defines.h"
+#include "debug_api.h"
+#include "broker_api_class.h"
+
 #ifndef DEBUG_API_AND_WRAPPER
 #define DEBUG_API_AND_WRAPPER
-
-#include "global_defines.h"
-#include "wrapper_class.h"
-#include "debug_api.h"
 
 
 

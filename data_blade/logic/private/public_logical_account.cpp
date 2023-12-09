@@ -1,7 +1,6 @@
 #include <thread>
 #include "logical_account.h"
 #include "assert_and_verify.h"
-#include "debug_api_and_wrapper.h"
 
 /*
 Input:
@@ -74,8 +73,8 @@ key logical_account::async_buy_stock(std::string ticker, uint32_t amount) {
     key async_key = _generate_key(ticker, amount);
 
     //Store key in list
-    keyed_list_insert * kli = new keyed_list_insert(async_key);
-    _keyed_transactions.push_back(kli);//Have to do inline because user may immediately check on the status of the key
+    async_return * ar = new async_return(async_key);
+    _keyed_transactions[async_key] = ar;//Have to do inline because user may immediately check on the status of the key
 
     //Start thread
     std::thread sep_thread (logical_account::_async_buy_stock_wrapper, ticker, amount, async_key);
@@ -138,8 +137,8 @@ key logical_account::async_sell_stock(std::string ticker, uint32_t amount) {
     key async_key = _generate_key(ticker, amount);
 
     //Store key in list
-    keyed_list_insert * kli = new keyed_list_insert(async_key);
-    _keyed_transactions.push_back(kli);//Have to do inline because user may immediately check on the status of the key
+    async_return * ar = new async_return(async_key);
+    _keyed_transactions[async_key] = ar;//Have to do inline because user may immediately check on the status of the key
 
     //Start thread
     std::thread sep_thread (logical_account::_async_sell_stock_wrapper, ticker, amount, async_key);
@@ -193,18 +192,15 @@ Assumptions:
 */
 inline uint32_t logical_account::get_key_value(key requested_key, bool auto_delete_entry = true) {
     uint_fast32_t return_value = 0;
-    keyed_list_insert * kli;
+    async_return * ar = NULL;
 
-    for (std::list<keyed_list_insert*>::iterator it = _keyed_transactions.begin(); it != _keyed_transactions.end(); ++it) {
-        kli = (*it);
-        return_value = kli->return_value;
-        if ((*it)->stored_key == requested_key && (*it)->has_return_value) {
-            if (auto_delete_entry) {
-                _keyed_transactions.erase(it);
-                free(kli);
-            }
-            break;
-        }
+    if (auto search = _keyed_transactions.find(requested_key); search != _keyed_transactions.end()) {
+        ar = search->second;
+    }
+
+    if (ar->has_return_value && auto_delete_entry) {
+        _keyed_transactions.erase(requested_key);
+        free(ar);
     }
 
     return return_value;
@@ -218,15 +214,36 @@ Description:
 Assumptions:
 */
 inline uint32_t logical_account::wait_for_key_value(key requested_key, bool auto_delete_entry = true) {
-    keyed_list_insert * kli = _get_kli_from_list(requested_key);
+    async_return * ar = NULL;
     uint_fast32_t iterations = 2;
 
-    if (kli != NULL) {
-        while(!(kli->has_return_value) && iterations < UINT16_MAX) {
+    if (auto search = _keyed_transactions.find(requested_key); search != _keyed_transactions.end()) {
+        ar = search->second;
+    }
+
+    if (ar != NULL) {
+        while(!(ar->has_return_value) && iterations < UINT16_MAX) {
             iterations *= 2;
             std::this_thread::sleep_for(std::chrono::milliseconds(iterations));//Highly inefficient, may increase from 5
         }
     }
 
-    return kli->return_value;
+    return ar->return_value;
+}
+
+
+/*
+Input:
+Output:
+Description:
+Assumptions:
+*/
+inline bool logical_account::key_has_returned_value(key requested_key) {
+    async_return * ar = NULL;
+
+    if (auto search = _keyed_transactions.find(requested_key); search != _keyed_transactions.end()) {
+        ar = search->second;
+    }
+
+    return ar ? ar->has_return_value : false;
 }

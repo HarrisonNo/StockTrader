@@ -1,12 +1,9 @@
-#ifndef LOGICAL_TICKER
-#define LOGICAL_TICKER
-
 #include <inttypes.h>
-#include <string>
-#include <list>
 #include <functional>
 #include "logical_account.h"
 
+#ifndef LOGICAL_TICKER
+#define LOGICAL_TICKER
 
 class logical_ticker {
     private:

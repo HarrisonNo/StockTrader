@@ -1,9 +1,13 @@
+#include <string>
+#include <mutex>
+#include <list>
+#include <map>
+#include "api.h"
+
 #ifndef LOGICAL_ACCOUNT
 #define LOGICAL_ACCOUNT
 
-#include "logical_ticker.h"
-#include "wrapper_class.h"
-#include <mutex>
+#include "logical_ticker.h"//Acts as forward declaration of logical_ticker
 
 typedef long long key;
 
@@ -32,7 +36,7 @@ class logical_account {
         wrapper_class _wrapper_vars;
 
     //Functions
-        inline logical_ticker * _get_logical_ticker(std::string ticker);
+        inline logical_ticker * _get_logical_ticker(std::string ticker);//SWAP TO MAP OF LOGICAL_TICKERS
         inline logical_ticker * _create_logical_ticker(std::string ticker);
         inline logical_ticker * _get_or_create_logical_ticker(std::string ticker);
 
@@ -40,16 +44,15 @@ class logical_account {
 
         void _async_buy_stock_wrapper(std::string ticker, uint32_t amount, key async_key);
         void _async_sell_stock_wrapper(std::string ticker, uint32_t amount, key async_key);
-        void _solo_thread_transaction_checker();
 
     //Abstract data types
-        class keyed_list_insert {
+        class async_return {
             public:
                 key stored_key;
                 bool has_return_value;
                 uint32_t return_value;
-                inline keyed_list_insert(){}//Default, used for generating pointers
-                inline keyed_list_insert(key sk) {
+                inline async_return(){}//Default, used for generating pointers
+                inline async_return(key sk) {
                     stored_key = sk;
                     has_return_value = false;
                     return_value = 0;
@@ -62,11 +65,8 @@ class logical_account {
                 uint32_t expected_amount;
         };
 
-        std::list<keyed_list_insert*> _keyed_transactions;
-        std::list<logical_ticker*> _logical_tickers;
-
-    //ADT functions
-        inline keyed_list_insert * _get_kli_from_list(key sk) {for (std::list<keyed_list_insert*>::iterator it = _keyed_transactions.begin(); it != _keyed_transactions.end(); ++it) {if ((*it)->stored_key == sk) {return *it;}}}
+        std::map<key, async_return*> _keyed_transactions;
+        std::map<std::string, logical_ticker*> _logical_tickers;
     public:
         logical_account();
         
@@ -77,7 +77,7 @@ class logical_account {
         inline uint32_t get_key_value(key requested_key, bool auto_delete_entry = true);
         inline uint32_t wait_for_key_value(key requested_key, bool auto_delete_entry = true);
 
-        inline bool key_has_returned_value(key requested_key) {keyed_list_insert * kli = _get_kli_from_list(requested_key); return kli ? kli->has_return_value : false;}
+        inline bool key_has_returned_value(key requested_key);
 
         double available_cash(bool force_check = false);
 

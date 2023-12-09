@@ -11,10 +11,8 @@ Description:
 Assumptions:
 */
 inline logical_ticker * logical_account::_get_logical_ticker(std::string ticker) {
-    for(std::list<logical_ticker*>::iterator it = _logical_tickers.begin(); it != _logical_tickers.end(); ++it) {
-        if ((*it)->ticker() == ticker) {
-            return (*it);
-        }
+    if (auto search = _logical_tickers.find(ticker); search != _logical_tickers.end()) {
+        return search->second;
     }
     //Did not find
     return NULL;
@@ -27,8 +25,9 @@ Output:
 Description:
 Assumptions:
 */
-inline logical_ticker * _create_logical_ticker(std::string ticker) {
+inline logical_ticker * logical_account::_create_logical_ticker(std::string ticker) {
     logical_ticker * new_logical_ticker = new logical_ticker(ticker);
+    _logical_tickers[ticker] = new_logical_ticker;
 }
 
 
@@ -70,10 +69,10 @@ Description:
 Assumptions:
 */
 void logical_account::_async_buy_stock_wrapper(std::string ticker, uint32_t amount, key async_key) {
-    //Get the keyed_list insert
-    keyed_list_insert * kli = _get_kli_from_list(async_key);
-    kli->return_value = buy_stock(ticker, amount);
-    kli->has_return_value = true;
+    //Get the async_return
+    async_return * ar = _keyed_transactions[async_key];
+    ar->return_value = buy_stock(ticker, amount);
+    ar->has_return_value = true;
     //Deleting kli happens after the value is retrived from it
     return;
 }
@@ -86,10 +85,10 @@ Description:
 Assumptions:
 */
 void logical_account::_async_sell_stock_wrapper(std::string ticker, uint32_t amount, key async_key) {
-    //Get the keyed_list insert
-    keyed_list_insert * kli = _get_kli_from_list(async_key);
-    kli->return_value = sell_stock(ticker, amount);
-    kli->has_return_value = true;
+    //Get the async_return
+    async_return * ar = _keyed_transactions[async_key];
+    ar->return_value = sell_stock(ticker, amount);
+    ar->has_return_value = true;
     //Deleting kli happens after the value is retrived from it
     return;
 }
