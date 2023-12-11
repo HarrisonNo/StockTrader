@@ -34,7 +34,7 @@ bool basic_function_replacement(std::string * fail_string) {
 bool basic_function_replacement(std::string * fail_string) {
     UNIT_TEST_TRY_WRAPPER(
         //MAKE ABOUT GLOBAL VAL SET
-        debug_account_cash_GLOBAL_var = 100;
+        debug_account_cash_SET_GLOBAL(100);
         debug_amount_owned_func = debug_amount_owned_GLOBAL;
         debug_stock_price_func = debug_stock_price_ZERO;
         debug_account_cash_func = debug_account_cash_ZERO;

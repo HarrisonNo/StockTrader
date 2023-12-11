@@ -3,22 +3,42 @@
 
 //TODO make use of static vars for significant changes
 
-//So far three types of debug funcs
+//Global vars
+std::map<std::string, uint32_t> debug_amount_owned_GLOBAL_map;
+bool debug_amount_owned_NATURAL_CHANGING = false;
+std::map<std::string, double> debug_stock_price_GLOBAL_map;
+double debug_account_cash_GLOBAL_var = 0;
+
+//So far five types of debug funcs
 //uint32_t debug_amount_owned_func(std::string)
 //double debug_stock_price_func(std::string)
 //double debug_account_cash_func()
+//uint32_t debug_purchase_amount_func(uint32_t)
+//uint32_t debug_sell_amount_func(uint32_t)
 
 //AMOUNT_OWNED
 uint32_t debug_amount_owned_ZERO(std::string ticker) {
     return 0;
 }
 
-std::map<std::string, uint32_t> debug_amount_owned_GLOBAL_map;
-uint32_t debug_amount_owned_GLOBAL(std::string ticker) {
-    if (debug_amount_owned_GLOBAL_map.find(ticker) != debug_amount_owned_GLOBAL_map.end()) {
-        return debug_amount_owned_GLOBAL_map[ticker];
-    }
+
+inline uint32_t debug_amount_owned_SET_GLOBAL(std::string ticker, uint32_t set_amount) {
+    debug_amount_owned_GLOBAL_map[ticker] = set_amount;
 }
+
+
+inline void debug_amount_owned_SET_NATURAL_CHANGING(bool enable_changing) {
+    debug_amount_owned_NATURAL_CHANGING = enable_changing;
+}
+
+
+uint32_t debug_amount_owned_GLOBAL(std::string ticker) {
+    if (auto search = debug_amount_owned_GLOBAL_map.find(ticker); search != debug_amount_owned_GLOBAL_map.end()) {
+        return search->second;
+    }
+    return 0;
+}
+
 
 uint32_t debug_amount_owned_USER(std::string ticker) {
     uint32_t return_val;
@@ -28,17 +48,25 @@ uint32_t debug_amount_owned_USER(std::string ticker) {
 }
 
 
+
 //STOCK_PRICE
 double debug_stock_price_ZERO(std::string ticker) {
     return 0;
 }
 
-std::map<std::string, double> debug_stock_price_GLOBAL_map;
-double debug_stock_price_GLOBAL(std::string ticker) {
-    if (debug_stock_price_GLOBAL_map.find(ticker) != debug_stock_price_GLOBAL_map.end()) {
-        return debug_stock_price_GLOBAL_map[ticker];
-    }
+
+inline double debug_stock_price_SET_GLOBAL(std::string ticker, double set_price) {
+    debug_stock_price_GLOBAL_map[ticker] = set_price;
 }
+
+
+double debug_stock_price_GLOBAL(std::string ticker) {
+    if (auto search = debug_stock_price_GLOBAL_map.find(ticker); search != debug_stock_price_GLOBAL_map.end()) {
+        return search->second;
+    }
+    return 0;
+}
+
 
 double debug_stock_price_USER(std::string ticker) {
     double return_val;
@@ -48,15 +76,22 @@ double debug_stock_price_USER(std::string ticker) {
 }
 
 
+
 //ACCOUNT CASH
 double debug_account_cash_ZERO() {
     return 0;
 }
 
-double debug_account_cash_GLOBAL_var;
+
+inline double debug_account_cash_SET_GLOBAL(double set_cash) {
+    debug_account_cash_GLOBAL_var = set_cash;
+}
+
+
 double debug_account_cash_GLOBAL() {
     return debug_account_cash_GLOBAL_var;
 }
+
 
 double debug_account_cash_USER() {
     double return_val;
@@ -64,4 +99,36 @@ double debug_account_cash_USER() {
     std::cin>>return_val;
     return return_val;
 }
+
+
+
+//PURCHASE AMOUNT
+uint32_t debug_purchase_amount_ZERO(std::string ticker, uint32_t requested_amount) {
+    return 0;
+}
+
+
+uint32_t debug_purchase_amount_REQUESTED(std::string ticker, uint32_t requested_amount) {
+    if (debug_amount_owned_NATURAL_CHANGING) {
+        debug_amount_owned_SET_GLOBAL(ticker, debug_amount_owned_GLOBAL(ticker) + requested_amount);
+    }
+    return requested_amount;
+}
+
+
+
+//SELL AMOUNT
+uint32_t debug_sell_amount_ZERO(std::string ticker, uint32_t requested_amount) {
+    return 0;
+}
+
+
+uint32_t debug_sell_amount_REQUESTED(std::string ticker, uint32_t requested_amount) {
+    if (debug_amount_owned_NATURAL_CHANGING) {
+        debug_amount_owned_SET_GLOBAL(ticker, debug_amount_owned_GLOBAL(ticker) - requested_amount);
+    }
+    return requested_amount;
+}
+
+
 

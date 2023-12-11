@@ -103,7 +103,7 @@ uint32_t logical_ticker::purchase_amount(uint32_t amount) {
     }
     
     try {
-        amount = _tied_account->get_wrapper_class()->wrapper_purchase_amount(_ticker, amount);
+        amount = PURCHASE_AMOUNT(_ticker, amount);
     }
     catch (std::exception &e){
         ASSERT(!("purchase_amount wrapper failed with exception e:",e.what()));
@@ -172,7 +172,7 @@ uint32_t logical_ticker::sell_amount(uint32_t amount) {
     }
 
     try {
-        amount = _tied_account->get_wrapper_class()->wrapper_sell_amount(_ticker, selling_amount);
+        amount = SELL_AMOUNT(_ticker, selling_amount);
     }
     catch (std::exception &e){
         ASSERT(!("sell_amount wrapper failed with exception e:",e.what()));
