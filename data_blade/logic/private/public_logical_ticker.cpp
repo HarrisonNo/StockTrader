@@ -129,7 +129,7 @@ Output: amount we BELIEVE we sold
 Description:
 Assumptions:
 */
-uint32_t logical_ticker::sell_amount(uint32_t amount) {
+uint32_t logical_ticker::sell_amount(uint32_t amount, bool force_sell = false) {
     uint_fast32_t already_held_amount = amount_owned();
     uint_fast32_t selling_amount = 0;
     uint_fast32_t need_amount;
@@ -145,13 +145,17 @@ uint32_t logical_ticker::sell_amount(uint32_t amount) {
         return 0;
     }
 
+    if (_transactions.size() < amount) {//We do not know the transaction history of some of these stocks, current behavior is to sell
+        selling_amount = amount - _transactions.size();
+    }
+
     for(std::list<list_insert*>::iterator it = _transactions.begin(); it != _transactions.end(); ++it) {
         if (need_amount == 0) {
             break;
         }
         //Current price is lower than bought price
         if ((*it)->price > stock_price()) {
-            if (!_can_sell_at_loss_default) {
+            if (!_can_sell_at_loss_default && !force_sell) {
                 break;
             }
         }
@@ -185,6 +189,12 @@ uint32_t logical_ticker::sell_amount(uint32_t amount) {
     //In the logical_account
     //We actually adjust the struct value in the thread
     return amount;
+}
+
+
+uint32_t logical_account::held_stock(std::string ticker, bool force_check = false) {
+    logical_ticker * lt = _get_or_create_logical_ticker(ticker);
+    return lt->amount_owned(force_check);
 }
 
 
@@ -239,6 +249,13 @@ double logical_ticker::stock_price_at_time(int16_t requested_year = INT16_MIN, i
     uint_fast64_t temp_badness_score, final_badness_score = -1;//How far off the mark are we from a perfect request, the lower the better
     std::fstream historical_price_file;
     double temp_price, final_price = -1;
+    std::string ticker_file_location;
+
+    #if DEBUG_API
+    ticker_file_location = "saved_info/DEBUG_ticker_info/";
+    #else
+    ticker_file_location = "saved_info/historical_ticker_info/"
+    #endif
 
     _catch_invalid_dates(&requested_year, &requested_month, &requested_day, &requested_hour, &requested_minute, &requested_second);
 
@@ -264,7 +281,7 @@ double logical_ticker::stock_price_at_time(int16_t requested_year = INT16_MIN, i
                       &max_year, &max_month, &max_day, &max_hour, &max_minute, &max_second);
 
     for (int year = min_year; year <= max_year; year++) {
-        check_and_create_dirs("saved_info/historical_ticker_info/" + ticker() + "/" + std::to_string(year));
+        check_and_create_dirs(ticker_file_location + ticker() + "/" + std::to_string(year));
 
         if (year == min_year && year == max_year) {
             loop_month_min = loop_catch_min = min_month;
@@ -288,7 +305,7 @@ double logical_ticker::stock_price_at_time(int16_t requested_year = INT16_MIN, i
         }
 
         for (int month = loop_month_min; month <= loop_month_max; month++) {
-            historical_price_file.open("saved_info/historical_ticker_info/" + _ticker + "/" + std::to_string(year) + "/" + std::to_string(month), std::ios::in);
+            historical_price_file.open(ticker_file_location + _ticker + "/" + std::to_string(year) + "/" + std::to_string(month), std::ios::in);
             if (month == loop_catch_max && month == loop_catch_min) {
                 while (historical_price_file >> temp_day >> temp_hour >> temp_minute >> temp_second >> temp_price) {
                     if (temp_day < min_day) {
@@ -359,6 +376,13 @@ uint64_t logical_ticker::stock_prices_between_times(uint64_t calculation_limit, 
     uint16_t temp_day, temp_hour, temp_minute, temp_second, temp_price;
     uint64_t array_bank_cnt = 0;
     std::fstream historical_price_file;
+    std::string ticker_file_location;
+
+    #if DEBUG_API
+    ticker_file_location = "saved_info/DEBUG_ticker_info/";
+    #else
+    ticker_file_location = "saved_info/historical_ticker_info/"
+    #endif
 
     _catch_invalid_dates(&min_year, &min_month, &min_day, &min_hour, &min_minute, &min_second);
     _catch_invalid_dates(&max_year, &max_month, &max_day, &max_hour, &max_minute, &max_second);
@@ -369,7 +393,7 @@ uint64_t logical_ticker::stock_prices_between_times(uint64_t calculation_limit, 
     }
 
     for (int year = min_year; year <= max_year; year++) {
-        check_and_create_dirs("saved_info/historical_ticker_info/" + ticker() + "/" + std::to_string(year));
+        check_and_create_dirs(ticker_file_location + ticker() + "/" + std::to_string(year));
 
         if (year == min_year && year == max_year) {
             loop_month_min = loop_catch_min = min_month;
@@ -393,7 +417,7 @@ uint64_t logical_ticker::stock_prices_between_times(uint64_t calculation_limit, 
         }
 
         for (int month = loop_month_min; month <= loop_month_max; month++) {
-            historical_price_file.open("saved_info/historical_ticker_info/" + _ticker + "/" + std::to_string(year) + "/" + std::to_string(month), std::ios::in);
+            historical_price_file.open(ticker_file_location + _ticker + "/" + std::to_string(year) + "/" + std::to_string(month), std::ios::in);
             if (month == loop_catch_max && month == loop_catch_min) {
                 while (historical_price_file >> temp_day >> temp_hour >> temp_minute >> temp_second >> temp_price) {
                     if (temp_day < min_day) {

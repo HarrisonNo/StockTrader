@@ -22,7 +22,9 @@ logical_ticker::logical_ticker(std::string input_ticker) {
     _ticker = input_ticker;
     _can_sell_at_loss_default = 0;
     _transactions_list_stock_count = 0;
+    #if ENABLE_BOOT_LOADING
     _load_transactions();
+    #endif
 }
 
 
@@ -170,8 +172,13 @@ void logical_ticker::_save_stock_price_at_time(double stock_price, time_t curren
     }
 
     time_info = localtime(&current_time);
+    #if DEBUG_API
+    check_and_create_dirs("saved_info/DEBUG_ticker_info/" + _ticker + "/" + std::to_string(time_info->tm_year));
+    historical_price_file.open("saved_info/DEBUG_ticker_info/" + _ticker + "/" + std::to_string(time_info->tm_year) + "/" + std::to_string(time_info->tm_mon), std::ios::in | std::ios::out);
+    #else
     check_and_create_dirs("saved_info/historical_ticker_info/" + _ticker + "/" + std::to_string(time_info->tm_year));
     historical_price_file.open("saved_info/historical_ticker_info/" + _ticker + "/" + std::to_string(time_info->tm_year) + "/" + std::to_string(time_info->tm_mon), std::ios::in | std::ios::out);
+    #endif
     file_position = historical_price_file.tellg();//Stores postion of file at start, updated at end of every while loop
 
     //This breaks once we have gone right past where we want to insert

@@ -82,7 +82,8 @@ class logical_account {
         double available_cash(bool force_check = false);
 
         uint32_t buy_stock(std::string ticker, uint32_t amount);
-        uint32_t sell_stock(std::string ticker, uint32_t amount);
+        uint32_t sell_stock(std::string ticker, uint32_t amount, bool force_sell = false);
+        uint32_t held_stock(std::string ticker, bool force_check = false);
 
         key async_buy_stock(std::string ticker, uint32_t amount);//Generate and return a key then dispatch thread, key is used to access list(?) which holds the desired returned value
         key async_sell_stock(std::string ticker, uint32_t amount);

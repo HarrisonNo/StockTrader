@@ -90,7 +90,7 @@ Output: returns the logical ticker if it exists, NULL if otherwise
 Description:
 Assumptions:
 */
-uint32_t logical_account::sell_stock(std::string ticker, uint32_t amount) {
+uint32_t logical_account::sell_stock(std::string ticker, uint32_t amount, bool force_sell = false) {
     double total_projected_profit, stock_price;
     uint_fast32_t amount_sold, amount_initially_held;
     logical_ticker * lt = _get_or_create_logical_ticker(ticker);
@@ -111,7 +111,7 @@ uint32_t logical_account::sell_stock(std::string ticker, uint32_t amount) {
     _number_of_projections++;
     _cash_lock.unlock();
 
-    amount_sold = lt->sell_amount(amount);
+    amount_sold = lt->sell_amount(amount, force_sell);
 
     _cash_lock.lock();
     if (_number_of_projections) {//We may have just checked the available cash and reset projections

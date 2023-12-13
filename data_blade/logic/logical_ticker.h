@@ -76,7 +76,7 @@ class logical_ticker {
 
         uint32_t amount_owned(bool force_check = false);
         uint32_t purchase_amount(uint32_t amount);
-        uint32_t sell_amount(uint32_t amount);
+        uint32_t sell_amount(uint32_t amount, bool force_sell = false);
         
         double stock_price(bool force_check = false);
         double stock_price_at_time(int16_t requested_year, int16_t requested_month, int16_t requested_day, int16_t requested_hour, int16_t requested_minute, int16_t requested_second,
