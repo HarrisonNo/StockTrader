@@ -39,11 +39,11 @@ void logical_ticker::_load_transactions() {
     int temp_amount, temp_price;
     std::ifstream transaction_file;
     list_insert * temp_list_insert;
-    check_and_create_dirs("saved_info/historical_ticker_info/" + _ticker);
+    check_and_create_dirs(HISTORICAL_TICKER_DIR(_ticker));
     //Got to where historical data is stored (the balls)
-    check_and_create_dirs("/saved_info/users/" + _tied_account->account_name() + "/" + _ticker);
+    check_and_create_dirs(SAVED_ACCOUNT_TICKER_DIR(_tied_account->account_name(), _ticker));
     //We have now verified that the example path "save_info/users/HarrisonQuiring/AMD/transactions"
-    transaction_file.open("/saved_info/users/" + _tied_account->account_name() + "/" + _ticker + "/transactions_file", std::ios::in);
+    transaction_file.open(SAVED_ACCOUNT_TRANSACTIONS_FILE(_tied_account->account_name(), _ticker), std::ios::in);
     while (transaction_file >> temp_amount >> temp_price) {
         temp_list_insert = _create_list_node(temp_amount, temp_price);
         _transactions.push_back(temp_list_insert);
@@ -63,7 +63,7 @@ void logical_ticker::_save_transactions() {
     //_load_transactions is called on startup of logical_ticker which checks for transactions dir existence, no need to double check
     std::ofstream transaction_file;
     //Open with binary and truncate, binary removes the need/capability of catching shit like '\n' while truncate deletes the file if it already existed(possibly bad if we crashed previously?)
-    transaction_file.open("/saved_info/users/" + _tied_account->account_name() + "/" + _ticker + "/transactions_file", std::ios::out | std::ios::trunc);
+    transaction_file.open(SAVED_ACCOUNT_TRANSACTIONS_FILE(_tied_account->account_name(), _ticker), std::ios::out | std::ios::trunc);
     for(std::list<list_insert*>::iterator it = _transactions.begin(); it != _transactions.end(); ++it) {
         transaction_file << (*it)->amount << "\t";
         transaction_file << (*it)->price << "\n";
@@ -172,13 +172,8 @@ void logical_ticker::_save_stock_price_at_time(double stock_price, time_t curren
     }
 
     time_info = localtime(&current_time);
-    #if DEBUG_API
-    check_and_create_dirs("saved_info/DEBUG_ticker_info/" + _ticker + "/" + std::to_string(time_info->tm_year));
-    historical_price_file.open("saved_info/DEBUG_ticker_info/" + _ticker + "/" + std::to_string(time_info->tm_year) + "/" + std::to_string(time_info->tm_mon), std::ios::in | std::ios::out);
-    #else
-    check_and_create_dirs("saved_info/historical_ticker_info/" + _ticker + "/" + std::to_string(time_info->tm_year));
-    historical_price_file.open("saved_info/historical_ticker_info/" + _ticker + "/" + std::to_string(time_info->tm_year) + "/" + std::to_string(time_info->tm_mon), std::ios::in | std::ios::out);
-    #endif
+    check_and_create_dirs(HISTORICAL_TICKER_YEAR_DIR(_ticker, std::to_string(time_info->tm_year)));
+    historical_price_file.open(HISTORICAL_TICKER_MONTH_FILE(_ticker, std::to_string(time_info->tm_year), std::to_string(time_info->tm_mon)), std::ios::in | std::ios::out);
     file_position = historical_price_file.tellg();//Stores postion of file at start, updated at end of every while loop
 
     //This breaks once we have gone right past where we want to insert

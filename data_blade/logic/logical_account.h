@@ -68,7 +68,7 @@ class logical_account {
         std::map<key, async_return*> _keyed_transactions;
         std::map<std::string, logical_ticker*> _logical_tickers;
     public:
-        logical_account();
+        logical_account(bool load_existing = true);
         
         inline std::string account_name();
 

@@ -251,12 +251,6 @@ double logical_ticker::stock_price_at_time(int16_t requested_year = INT16_MIN, i
     double temp_price, final_price = -1;
     std::string ticker_file_location;
 
-    #if DEBUG_API
-    ticker_file_location = "saved_info/DEBUG_ticker_info/";
-    #else
-    ticker_file_location = "saved_info/historical_ticker_info/"
-    #endif
-
     _catch_invalid_dates(&requested_year, &requested_month, &requested_day, &requested_hour, &requested_minute, &requested_second);
 
     max_year = requested_year + year_deviation;
@@ -281,7 +275,7 @@ double logical_ticker::stock_price_at_time(int16_t requested_year = INT16_MIN, i
                       &max_year, &max_month, &max_day, &max_hour, &max_minute, &max_second);
 
     for (int year = min_year; year <= max_year; year++) {
-        check_and_create_dirs(ticker_file_location + ticker() + "/" + std::to_string(year));
+        check_and_create_dirs(HISTORICAL_TICKER_YEAR_DIR(_ticker, std::to_string(year)));
 
         if (year == min_year && year == max_year) {
             loop_month_min = loop_catch_min = min_month;
@@ -305,7 +299,7 @@ double logical_ticker::stock_price_at_time(int16_t requested_year = INT16_MIN, i
         }
 
         for (int month = loop_month_min; month <= loop_month_max; month++) {
-            historical_price_file.open(ticker_file_location + _ticker + "/" + std::to_string(year) + "/" + std::to_string(month), std::ios::in);
+            historical_price_file.open(HISTORICAL_TICKER_MONTH_FILE(_ticker, std::to_string(year), std::to_string(month)), std::ios::in);
             if (month == loop_catch_max && month == loop_catch_min) {
                 while (historical_price_file >> temp_day >> temp_hour >> temp_minute >> temp_second >> temp_price) {
                     if (temp_day < min_day) {
@@ -378,12 +372,6 @@ uint64_t logical_ticker::stock_prices_between_times(uint64_t calculation_limit, 
     std::fstream historical_price_file;
     std::string ticker_file_location;
 
-    #if DEBUG_API
-    ticker_file_location = "saved_info/DEBUG_ticker_info/";
-    #else
-    ticker_file_location = "saved_info/historical_ticker_info/"
-    #endif
-
     _catch_invalid_dates(&min_year, &min_month, &min_day, &min_hour, &min_minute, &min_second);
     _catch_invalid_dates(&max_year, &max_month, &max_day, &max_hour, &max_minute, &max_second);
     _date_corrections(&min_year, &min_month, &min_day, &min_hour, &min_minute, &min_second, &max_year, &max_month, &max_day, &max_hour, &max_minute, &max_second);
@@ -393,8 +381,8 @@ uint64_t logical_ticker::stock_prices_between_times(uint64_t calculation_limit, 
     }
 
     for (int year = min_year; year <= max_year; year++) {
-        check_and_create_dirs(ticker_file_location + ticker() + "/" + std::to_string(year));
-
+        check_and_create_dirs(HISTORICAL_TICKER_YEAR_DIR(_ticker, std::to_string(year)));
+        
         if (year == min_year && year == max_year) {
             loop_month_min = loop_catch_min = min_month;
             loop_month_max = loop_catch_max = max_month;
@@ -417,7 +405,7 @@ uint64_t logical_ticker::stock_prices_between_times(uint64_t calculation_limit, 
         }
 
         for (int month = loop_month_min; month <= loop_month_max; month++) {
-            historical_price_file.open(ticker_file_location + _ticker + "/" + std::to_string(year) + "/" + std::to_string(month), std::ios::in);
+            historical_price_file.open(HISTORICAL_TICKER_MONTH_FILE(_ticker, std::to_string(year), std::to_string(month)), std::ios::in);
             if (month == loop_catch_max && month == loop_catch_min) {
                 while (historical_price_file >> temp_day >> temp_hour >> temp_minute >> temp_second >> temp_price) {
                     if (temp_day < min_day) {

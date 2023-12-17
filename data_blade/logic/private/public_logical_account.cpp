@@ -8,10 +8,15 @@ Output:
 Description:
 Assumptions:
 */
-logical_account::logical_account() {
+logical_account::logical_account(bool load_existing = true) {
     _number_of_projections = 0;
     _time_last_checked_cash = 0;
     //TODO add in loading saved ticker and other vals?
+    if (!load_existing) {
+        //Purge any and all existing files which may have been previously created
+    } else {
+
+    }
 }
 
 
