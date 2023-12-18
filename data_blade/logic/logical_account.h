@@ -11,10 +11,6 @@
 
 typedef long long key;
 
-#define MAX_STOCK_PRICE_TIMEOUT 5 //Number of seconds we can use our stored stock price for a ticker before needing to check it again
-#define MAX_KNOWN_SEC_TIMEOUT 21600 //Max number of seconds we can use our stored known amount before double checking (6 hours)
-#define MIN_KNOWN_SEC_TIMEOUT 60 //Min number of seconds we have to double check before we can use our stored known amount
-
 class logical_account {
     private:
     //Variables
@@ -24,6 +20,8 @@ class logical_account {
         double _projected_cash;//Accounts for async threads that may take a minute to execute
 
         uint8_t _number_of_projections;
+
+        uint64_t _cheap_rng;
 
         uint8_t _known_cash_amount:1;
         uint8_t _UNUSED_EIGHT_BITS:7;
@@ -40,10 +38,13 @@ class logical_account {
         inline logical_ticker * _create_logical_ticker(std::string ticker);
         inline logical_ticker * _get_or_create_logical_ticker(std::string ticker);
 
-        inline key _generate_key(std::string ticker, uint32_t amount);
+        inline key _generate_key(std::string ticker, uint32_t amount = UINT32_MAX);
+
+        inline void _save_self();
 
         void _async_buy_stock_wrapper(std::string ticker, uint32_t amount, key async_key);
         void _async_sell_stock_wrapper(std::string ticker, uint32_t amount, key async_key);
+        void _async_stock_price_wrapper(std::string ticker, bool force_check);
 
     //Abstract data types
         class async_return {
@@ -68,7 +69,7 @@ class logical_account {
         std::map<key, async_return*> _keyed_transactions;
         std::map<std::string, logical_ticker*> _logical_tickers;
     public:
-        logical_account(bool load_existing = true);
+        logical_account(std::string account_name = "PLACEHOLDER", bool load_existing = true);
         
         inline std::string account_name();
 
@@ -80,17 +81,20 @@ class logical_account {
         inline bool key_has_returned_value(key requested_key);
 
         double available_cash(bool force_check = false);
+        double stock_price(std::string ticker, bool force_check = false);
 
         uint32_t buy_stock(std::string ticker, uint32_t amount);
         uint32_t sell_stock(std::string ticker, uint32_t amount, bool force_sell = false);
         uint32_t held_stock(std::string ticker, bool force_check = false);
 
-        key async_buy_stock(std::string ticker, uint32_t amount);//Generate and return a key then dispatch thread, key is used to access list(?) which holds the desired returned value
-        key async_sell_stock(std::string ticker, uint32_t amount);
+        key async_buy_stock(std::string ticker, uint32_t amount, bool generate_key = true);//Generate and return a key then dispatch thread, key is used to access list(?) which holds the desired returned value
+        key async_sell_stock(std::string ticker, uint32_t amount, bool generate_key = true);
+
+        void async_stock_price(std::string ticker, bool force_check = false);//Keys are currently not generated for stock_price
 
         wrapper_class * get_wrapper_class() {return &_wrapper_vars;}
 
-        void trigger_clean_shutdown();//Called to save everything and prepare for shutdown
+        void trigger_mass_save();//Called to save everything and prepare for shutdown
 };
 
 

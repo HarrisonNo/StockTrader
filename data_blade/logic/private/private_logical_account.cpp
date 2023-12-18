@@ -70,10 +70,14 @@ Assumptions:
 */
 void logical_account::_async_buy_stock_wrapper(std::string ticker, uint32_t amount, key async_key) {
     //Get the async_return
-    async_return * ar = _keyed_transactions[async_key];
-    ar->return_value = buy_stock(ticker, amount);
-    ar->has_return_value = true;
-    //Deleting kli happens after the value is retrived from it
+    if (async_key != 0) {
+        async_return * ar = _keyed_transactions[async_key];
+        ar->return_value = buy_stock(ticker, amount);
+        ar->has_return_value = true;
+        //Deleting kli happens after the value is retrived from it
+    } else {
+        buy_stock(ticker, amount);
+    }
     return;
 }
 
@@ -86,9 +90,40 @@ Assumptions:
 */
 void logical_account::_async_sell_stock_wrapper(std::string ticker, uint32_t amount, key async_key) {
     //Get the async_return
-    async_return * ar = _keyed_transactions[async_key];
-    ar->return_value = sell_stock(ticker, amount);
-    ar->has_return_value = true;
+    //If key val is zero then it was never really generated
+    if (async_key != 0) {
+        async_return * ar = _keyed_transactions[async_key];
+        ar->return_value = sell_stock(ticker, amount);
+        ar->has_return_value = true;
+    } else {
+        sell_stock(ticker, amount);
+    }
     //Deleting kli happens after the value is retrived from it
+    return;
+}
+
+
+/*
+Input:
+Output:
+Description:
+Assumptions:
+*/
+void logical_account::_async_stock_price_wrapper(std::string ticker, bool force_check) {
+    //Get the async_return
+    //If key val is zero then it was never really generated
+    stock_price(ticker, force_check);
+    //Deleting kli happens after the value is retrived from it
+    return;
+}
+
+
+/*
+Input:
+Output:
+Description: TODO save everything not related to a ticker here, fuck if I know what that should be yet though
+Assumptions:
+*/
+inline void logical_account::_save_self() {
     return;
 }

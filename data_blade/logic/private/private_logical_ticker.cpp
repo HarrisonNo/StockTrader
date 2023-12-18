@@ -14,26 +14,6 @@ Output:
 Description:
 Assumptions:
 */
-logical_ticker::logical_ticker(std::string input_ticker) {
-    _time_last_checked_price = 0;
-    _time_last_checked_amount = 0;
-    _time_last_executed_transaction = 0;
-    _known_stock_amount_owned = 0;
-    _ticker = input_ticker;
-    _can_sell_at_loss_default = 0;
-    _transactions_list_stock_count = 0;
-    #if ENABLE_BOOT_LOADING
-    _load_transactions();
-    #endif
-}
-
-
-/*
-Input:
-Output:
-Description:
-Assumptions:
-*/
 inline
 void logical_ticker::_load_transactions() {
     int temp_amount, temp_price;

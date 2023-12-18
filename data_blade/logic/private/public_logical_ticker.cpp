@@ -5,6 +5,61 @@
 #include "directory_file_saving.h"
 
 
+#define MAX_STOCK_PRICE_TIMEOUT 5 //Number of seconds we can use our stored stock price for a ticker before needing to check it again
+#define MAX_KNOWN_SEC_TIMEOUT 21600 //Max number of seconds we can use our stored known amount before double checking (6 hours)
+#define MIN_KNOWN_SEC_TIMEOUT 60 //Min number of seconds we have to double check before we can use our stored known amount
+
+/*
+Input:
+Output:
+Description:
+Assumptions:
+*/
+logical_ticker::logical_ticker(std::string input_ticker, bool allow_boot_loading = true) {
+    _time_last_checked_price = 0;
+    _time_last_checked_amount = 0;
+    _time_last_executed_transaction = 0;
+    _known_stock_amount_owned = 0;
+    _ticker = input_ticker;
+    _can_sell_at_loss_default = 0;
+    _transactions_list_stock_count = 0;
+    if (allow_boot_loading) {
+        _load_transactions();
+    }
+    amount_owned(true);
+}
+
+
+/*
+Input:
+Output:
+Description: Save and clear new-ed memory, so far all we need to do is save, should this be optional? TODO
+Assumptions:
+*/
+logical_ticker::~logical_ticker() {
+    //Save ourselves
+    save_self();
+    //Then delete all new-ed memory
+    while(!(_transactions.empty())) {
+        list_insert * li = _transactions.front();
+        _transactions.pop_front();
+        delete(li);
+    }
+    
+}
+
+
+/*
+Input:
+Output:
+Description: Save everything, so far just need to save transactions
+Assumptions:
+*/
+void logical_ticker::save_self() {
+    _save_transactions();
+}
+
+
 /*
 Input:
 Output: returns the amount owned, 0 on wrapper failure(!!!!!!)
