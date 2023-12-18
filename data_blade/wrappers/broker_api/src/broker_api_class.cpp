@@ -1,5 +1,5 @@
 #include <string>
-#include "wrapper_class.h"
+#include "broker_api_class.h"
 
 /*
 Input:
@@ -8,7 +8,7 @@ Description:
 Assumptions:
 */
 double wrapper_class::wrapper_stock_price(std::string ticker) {
-
+    return 0;
 }
 
 
@@ -19,7 +19,7 @@ Description:
 Assumptions:
 */
 uint32_t wrapper_class::wrapper_amount_owned(std::string ticker) {
-
+    return 0;
 }
 
 
@@ -30,7 +30,7 @@ Description:
 Assumptions:
 */
 uint32_t wrapper_class::wrapper_purchase_amount(std::string ticker, uint32_t amount) {
-
+    return 0;
 }
 
 /*
@@ -40,7 +40,7 @@ Description:
 Assumptions:
 */
 uint32_t wrapper_class::wrapper_sell_amount(std::string ticker, uint32_t amount) {
-
+    return 0;
 }
 
 
@@ -51,5 +51,5 @@ Description:
 Assumptions:
 */
 double wrapper_class::wrapper_account_cash() {
-    
+    return 0;
 }
