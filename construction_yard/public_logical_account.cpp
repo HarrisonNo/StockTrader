@@ -1,6 +1,7 @@
 #include <thread>
 #include "logical_account.h"
 #include "assert_and_verify.h"
+#include "logical_ticker.h"
 
 
 #define MAX_KNOWN_SEC_TIMEOUT 21600 //Max number of seconds we can use our stored known amount before double checking (6 hours)
