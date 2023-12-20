@@ -71,9 +71,8 @@ class logical_account {
         std::map<std::string, logical_ticker*> _logical_tickers;
     public:
         logical_account(std::string account_name = "PLACEHOLDER", bool load_existing = true);
+        ~logical_account();
         
-        inline std::string account_name();
-
         inline void mark_known_cash_unkown() {_known_cash_amount = 0;}
 
         inline uint32_t get_key_value(key requested_key, bool auto_delete_entry = true);
@@ -92,10 +91,11 @@ class logical_account {
         key async_sell_stock(std::string ticker, uint32_t amount, bool generate_key = true);
 
         void async_stock_price(std::string ticker, bool force_check = false);//Keys are currently not generated for stock_price
+        void trigger_mass_save();//Called to save everything and prepare for shutdown
 
         wrapper_class * get_wrapper_class() {return &_wrapper_vars;}
 
-        void trigger_mass_save();//Called to save everything and prepare for shutdown
+        std::string account_name();
 };
 
 

@@ -58,8 +58,7 @@ Output:
 Description:
 Assumptions:
 */
-inline
-void logical_ticker::_modify_transaction_list(int64_t amount, double price = -1) {
+inline void logical_ticker::_modify_transaction_list(int64_t amount, double price/* = -1*/) {
     if (amount == 0) {
         return;
     }
@@ -140,7 +139,7 @@ Description:
 Assumptions:
 */
 inline
-void logical_ticker::_save_stock_price_at_time(double stock_price, time_t current_time = 0) {
+void logical_ticker::_save_stock_price_at_time(double stock_price, time_t current_time/* = 0*/) {
     struct tm * time_info;
     std::fstream historical_price_file;
     int16_t temp_day, temp_hour, temp_minute, temp_second;
@@ -245,66 +244,66 @@ inline void _date_corrections(int16_t * min_year, int16_t * min_month, int16_t *
     uint8_t days_per_month[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
     while (*max_second > 59) {
-        *max_minute++;
+        *max_minute += 1;
         *max_second -= 60;
     }
     while (*min_second < 0) {
-        *min_minute--;
+        *min_minute -= 1;
         *min_second += 60;
     }
 
     while (*max_minute > 59) {
-        *max_hour++;
+        *max_hour += 1;
         *max_minute -= 60;
     }
     while (*min_minute < 0) {
-        *min_hour--;
+        *min_hour -= 1;
         *min_minute += 60;
     }
 
     while (*max_hour > 23) {
-        *max_day++;
+        *max_day += 1;
         *max_hour -= 24;
     }
     while (*min_hour < 0) {
-        *min_day--;
+        *min_day -= 1;
         *min_hour += 24;
     }
 
     /* Need to catch potential over/underflow constantly */
 
     while (*max_month > 11) {
-        *max_year++;
+        *max_year += 1;
         *max_month -= 12;
     }
-    while (min_month < 0) {
-        *min_year--;
+    while (*min_month < 0) {
+        *min_year -= 1;
         *min_month +=12;
     }
 
     while (*max_day > days_per_month[*max_month]) {
         *max_day -= days_per_month[*max_month];
-        *max_month++;
+        *max_month += 1;
         while (*max_month > 11) {
-            *max_year++;
+            *max_year += 1;
             *max_month -= 12;
         }
     }
     while (*min_day < 0) {
         *min_day -= days_per_month[*min_month];
-        *min_month--;
+        *min_month -= 1;
         while (*min_month < 0) {
-            *min_year--;
+            *min_year -= 1;
             *min_month +=12;
         }
     }
 
     while (*max_month > 11) {
-        *max_year++;
+        *max_year += 1;
         *max_month -= 12;
     }
     while (*min_month < 0) {
-        *min_year--;
+        *min_year -= 1;
         *min_month +=12;
     }
 }

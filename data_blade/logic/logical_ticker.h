@@ -25,8 +25,6 @@ class logical_ticker {
 
         logical_account * _tied_account;
 
-        time_t _time_last_checked_price;
-
     //Functions
         inline void _modify_transaction_list(int64_t amount, double price = -1);//Amount to add/remove from transaction list
         inline void _load_transactions();

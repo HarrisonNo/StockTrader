@@ -23,7 +23,7 @@ def delete_construction_yard_sources():
     listing = os.listdir(".")
     for item in listing:
         #print("THE CURRENT ITEM IS:"+item)
-        if os.path.isfile(item) and (item.endswith('.h') or item.endswith('.cpp')):
+        if os.path.isfile(item) and (item.endswith('.h') or item.endswith('.cpp') or item.endswith('.o')):
             #print("ATTEMPTING TO DELETE ITEM: "+item)
             os.remove(item)
 

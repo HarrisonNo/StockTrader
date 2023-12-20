@@ -13,7 +13,7 @@ Output:
 Description:
 Assumptions:
 */
-logical_account::logical_account(std::string account_name = "PLACEHOLDER", bool load_existing = true) {
+logical_account::logical_account(std::string account_name/* = "PLACEHOLDER"*/, bool load_existing/* = true*/) {
     _number_of_projections = 0;
     _time_last_checked_cash = 0;
     _cheap_rng = 6942069;
@@ -55,6 +55,17 @@ logical_account::~logical_account() {
 /*
 Input:
 Output:
+Description:
+Assumptions:
+*/
+std::string logical_account::account_name() {
+    return _account_name;
+}
+
+
+/*
+Input:
+Output:
 Description: TODO destructing time
 Assumptions:
 */
@@ -77,7 +88,7 @@ Assumptions:
 */
 uint32_t logical_account::buy_stock(std::string ticker, uint32_t amount) {
     double total_projected_cost, stock_price;
-    uint_fast32_t amount_purchased, amount_initially_held;
+    uint_fast32_t amount_purchased;
     logical_ticker * lt = _get_or_create_logical_ticker(ticker);
 
     if (amount == 0) {
@@ -85,7 +96,6 @@ uint32_t logical_account::buy_stock(std::string ticker, uint32_t amount) {
     }
 
     stock_price = lt->stock_price();
-    amount_initially_held = lt->amount_owned();
     total_projected_cost = amount * stock_price;
 
     if (total_projected_cost > _projected_cash) {
@@ -150,14 +160,15 @@ uint32_t logical_account::sell_stock(std::string ticker, uint32_t amount, bool f
     uint_fast32_t amount_sold, amount_initially_held;
     logical_ticker * lt = _get_or_create_logical_ticker(ticker);
 
-    if (amount > lt->amount_owned()) {
-        amount = lt->amount_owned();
+    amount_initially_held = lt->amount_owned();
+
+    if (amount > amount_initially_held) {
+        amount = amount_initially_held;
     }
     if (amount == 0) {
         return 0;
     }
-
-    amount_initially_held = lt->amount_owned();
+    
     stock_price = lt->stock_price();
     total_projected_profit = amount * stock_price;
 
