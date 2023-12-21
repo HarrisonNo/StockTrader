@@ -1,5 +1,6 @@
 #include <stdlib.h>//exit
 #include <iostream>//cout
+#include <assert.h>
 #include "global_defines.h"
 
 #ifndef ASSERT_AND_VERIFY
@@ -29,13 +30,17 @@
 
 //May want to sub out definitions for printing and crashing later
 //T represents failure type i.e. (ASSERT or VERIFY)
-#define FAIL_PRINT(T, X) printf("Tripped "#T" in file: %s line: %d\n"#T":",__FILE__,__LINE__); std::cout<<std::to_string(X)<<std::endl;
+#define FAIL_PRINT(T, X) printf("Tripped "#T" in file: %s line: %d\n"#T":"#X,__FILE__,__LINE__);;
 #define CRASH_PROGRAM std::exit(-1);
+
+//TODODOD? https://en.cppreference.com/w/cpp/utility/source_location replace ASSERTS with that or with std::assert?
+//https://stackoverflow.com/questions/2849832/c-c-line-number
 
 
 //ASSERT and VERIFY definitions
 #if ASSERT_CRASH
-    #define ASSERT(X) if (!(X)) {FAIL_PRINT(ASSERT, X) CRASH_PROGRAM}
+    //#define ASSERT(X) if (!(X)) {FAIL_PRINT(ASSERT, X) CRASH_PROGRAM}
+    #define ASSERT(X) assert(X);
 #else //DO NOT CRASH ON ASSERT
     #if VERBOSE
         #define ASSERT(X) if (!(X)) {FAIL_PRINT(ASSERT, X)}
@@ -45,7 +50,7 @@
 #endif
 
 #if VERIFY_CRASH
-    #define VERIFY(X) if (!(X)) {FAIL_PRINT(VERIFY, X) CRASH_PROGRAM}
+    #define VERIFY(X) assert(X)
 #else //DO NOT CRASH ON VERIFY
     #define VERIFY(X) if (!(X)) {FAIL_PRINT(VERIFY, X)}
 #endif

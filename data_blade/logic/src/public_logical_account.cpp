@@ -44,11 +44,6 @@ logical_account::~logical_account() {
         delete(lt);
     }
     //Then delete all as we are falling out of scope
-    for (auto it = _keyed_transactions.begin(); it != _keyed_transactions.end(); it++) {
-        async_return * ar = it->second;
-        _keyed_transactions.erase(it);
-        delete(ar);
-    }
 }
 
 
@@ -132,20 +127,8 @@ Output:
 Description:
 Assumptions:
 */
-key logical_account::async_buy_stock(std::string ticker, uint32_t amount, bool generate_key = true) {
-    //Generate key
-    key async_key = 0;
-    if (generate_key) {
-        async_key = _generate_key(ticker, amount);
-        //Store key in list
-        async_return * ar = new async_return(async_key);
-        _keyed_transactions[async_key] = ar;//Have to do inline because user may immediately check on the status of the key
-    }
-    //Start thread
-    std::thread sep_thread (logical_account::_async_buy_stock_wrapper, ticker, amount, async_key);
-
-    //Can just return key here
-    return async_key;
+std::future<uint32_t> logical_account::async_buy_stock(std::string ticker, uint32_t amount) {
+    return std::async (logical_account::buy_stock, this, ticker, amount);
 }
 
 
@@ -155,7 +138,7 @@ Output: returns the logical ticker if it exists, NULL if otherwise
 Description:
 Assumptions:
 */
-uint32_t logical_account::sell_stock(std::string ticker, uint32_t amount, bool force_sell = false) {
+uint32_t logical_account::sell_stock(std::string ticker, uint32_t amount, bool force_sell/* = false*/) {
     double total_projected_profit, stock_price;
     uint_fast32_t amount_sold, amount_initially_held;
     logical_ticker * lt = _get_or_create_logical_ticker(ticker);
@@ -198,20 +181,8 @@ Output: returns the logical ticker if it exists, NULL if otherwise
 Description:
 Assumptions:
 */
-key logical_account::async_sell_stock(std::string ticker, uint32_t amount, bool generate_key = true) {
-    //Generate key
-    key async_key = 0;
-    if (generate_key) {
-        async_key = _generate_key(ticker, amount);
-        //Store key in list
-        async_return * ar = new async_return(async_key);
-        _keyed_transactions[async_key] = ar;//Have to do inline because user may immediately check on the status of the key
-    }
-    //Start thread
-    std::thread sep_thread (logical_account::_async_sell_stock_wrapper, ticker, amount, async_key);
-
-    //Can just return key here
-    return async_key;
+std::future<uint32_t> logical_account::async_sell_stock(std::string ticker, uint32_t amount, bool force_sell/* = false*/) {
+    return std::async(&logical_account::sell_stock, this, ticker, amount, force_sell);
 }
 
 
@@ -221,7 +192,7 @@ Output: returns the logical ticker if it exists, NULL if otherwise
 Description:
 Assumptions:
 */
-double logical_account::available_cash(bool force_check = false) {
+double logical_account::available_cash(bool force_check/* = false*/) {
     time_t current_time = time(NULL);
     double internal_cash;
 
@@ -233,8 +204,7 @@ double logical_account::available_cash(bool force_check = false) {
         internal_cash = ACCOUNT_CASH;
     }
     catch (std::exception &e){
-        ASSERT(!("amount_owned wrapper failed with exception e:",e.what()));
-        _cash_lock.unlock();
+        ASSERT(!"amount_owned wrapper failed");
         return 0;
     }
 
@@ -257,83 +227,7 @@ Output:
 Description:
 Assumptions:
 */
-inline uint32_t logical_account::get_key_value(key requested_key, bool auto_delete_entry = true) {
-    uint_fast32_t return_value = 0;
-    async_return * ar = NULL;
-
-    if (auto search = _keyed_transactions.find(requested_key); search != _keyed_transactions.end()) {
-        ar = search->second;
-    }
-
-    if (ar->has_return_value && auto_delete_entry) {
-        _keyed_transactions.erase(requested_key);
-        delete(ar);
-    }
-
-    return return_value;
-}
-
-
-/*
-Input:
-Output:
-Description:
-Assumptions:
-*/
-inline uint32_t logical_account::wait_for_key_value(key requested_key, bool auto_delete_entry = true) {
-    async_return * ar = NULL;
-    uint_fast32_t iterations = 2;
-
-    if (auto search = _keyed_transactions.find(requested_key); search != _keyed_transactions.end()) {
-        ar = search->second;
-    }
-
-    if (ar != NULL) {
-        while(!(ar->has_return_value) && iterations < UINT16_MAX) {
-            iterations *= 2;
-            std::this_thread::sleep_for(std::chrono::milliseconds(iterations));//Highly inefficient, may increase from 5
-        }
-    }
-
-    return ar->return_value;
-}
-
-
-/*
-Input:
-Output:
-Description:
-Assumptions:
-*/
-inline bool logical_account::key_has_returned_value(key requested_key) {
-    async_return * ar = NULL;
-
-    if (auto search = _keyed_transactions.find(requested_key); search != _keyed_transactions.end()) {
-        ar = search->second;
-    }
-
-    return ar ? ar->has_return_value : false;
-}
-
-
-/*
-Input:
-Output:
-Description:
-Assumptions:
-*/
-inline std::string logical_account::account_name() {
-    return _account_name;
-}
-
-
-/*
-Input:
-Output:
-Description:
-Assumptions:
-*/
-double logical_account::stock_price(std::string ticker, bool force_check = false) {
+double logical_account::stock_price(std::string ticker, bool force_check/* = false*/) {
     logical_ticker * lt = _get_or_create_logical_ticker(ticker);
     return lt->stock_price(force_check);
 }
@@ -345,11 +239,6 @@ Output:
 Description:
 Assumptions:
 */
-void logical_account::async_stock_price(std::string ticker, bool force_check = false) {
-    //Generate key
-    key async_key = 0;
-    //Start thread
-    std::thread sep_thread (logical_account::_async_stock_price_wrapper, ticker, force_check, async_key);
-    //Can just return key here
-    return;
+std::future<double> logical_account::async_stock_price(std::string ticker, bool force_check/* = false*/) {
+    return std::async (logical_account::stock_price, this, ticker, force_check);
 }

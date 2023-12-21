@@ -2,6 +2,7 @@
 #include <mutex>
 #include <list>
 #include <map>
+#include <future>
 #include "api.h"
 
 #ifndef LOGICAL_ACCOUNT
@@ -9,8 +10,6 @@
 
 //Forward declaration of ticker
 class logical_ticker;
-
-typedef long long key;
 
 class logical_account {
     private:
@@ -39,46 +38,21 @@ class logical_account {
         inline logical_ticker * _create_logical_ticker(std::string ticker);
         inline logical_ticker * _get_or_create_logical_ticker(std::string ticker);
 
-        inline key _generate_key(std::string ticker, uint32_t amount = UINT32_MAX);
-
         inline void _save_self();
 
-        void _async_buy_stock_wrapper(std::string ticker, uint32_t amount, key async_key);
-        void _async_sell_stock_wrapper(std::string ticker, uint32_t amount, key async_key);
-        void _async_stock_price_wrapper(std::string ticker, bool force_check);
-
     //Abstract data types
-        class async_return {
-            public:
-                key stored_key;
-                bool has_return_value;
-                uint32_t return_value;
-                inline async_return(){}//Default, used for generating pointers
-                inline async_return(key sk) {
-                    stored_key = sk;
-                    has_return_value = false;
-                    return_value = 0;
-                }
-        };
-
-        class transaction_checker_insert {
+        class transaction_checker_insert {//https://en.cppreference.com/w/cpp/thread/async <----------------------------USE INSTEAD LMAO
             public:
                 logical_ticker * lt;
                 uint32_t expected_amount;
         };
 
-        std::map<key, async_return*> _keyed_transactions;
         std::map<std::string, logical_ticker*> _logical_tickers;
     public:
         logical_account(std::string account_name = "PLACEHOLDER", bool load_existing = true);
         ~logical_account();
-        
+
         inline void mark_known_cash_unkown() {_known_cash_amount = 0;}
-
-        inline uint32_t get_key_value(key requested_key, bool auto_delete_entry = true);
-        inline uint32_t wait_for_key_value(key requested_key, bool auto_delete_entry = true);
-
-        inline bool key_has_returned_value(key requested_key);
 
         double available_cash(bool force_check = false);
         double stock_price(std::string ticker, bool force_check = false);
@@ -87,10 +61,10 @@ class logical_account {
         uint32_t sell_stock(std::string ticker, uint32_t amount, bool force_sell = false);
         uint32_t held_stock(std::string ticker, bool force_check = false);
 
-        key async_buy_stock(std::string ticker, uint32_t amount, bool generate_key = true);//Generate and return a key then dispatch thread, key is used to access list(?) which holds the desired returned value
-        key async_sell_stock(std::string ticker, uint32_t amount, bool generate_key = true);
+        std::future<uint32_t> async_buy_stock(std::string ticker, uint32_t amount);
+        std::future<uint32_t> async_sell_stock(std::string ticker, uint32_t amount, bool force_sell = false);
+        std::future<double> async_stock_price(std::string ticker, bool force_check = false);
 
-        void async_stock_price(std::string ticker, bool force_check = false);//Keys are currently not generated for stock_price
         void trigger_mass_save();//Called to save everything and prepare for shutdown
 
         wrapper_class * get_wrapper_class() {return &_wrapper_vars;}

@@ -79,11 +79,12 @@ bool basic_async_purchase_ten(std::string * fail_string) {
         debug_sell_amount_func = debug_sell_amount_REQUESTED;
         //Start program
         logical_account la;
-        key k = la.async_buy_stock("MSFT", 10);
-        la.wait_for_key_value(k);
+        auto key = la.async_buy_stock("MSFT", 10);
+        key.wait();
         uint32_t bought_stock = la.held_stock("MSFT");
         double account_cash = la.available_cash();
         THROW_IF_FALSE(bought_stock == 10, bought_stock);
+        THROW_IF_FALSE(bought_stock == key.get(), key.get());
         THROW_IF_FALSE(account_cash == 0, account_cash);
     )
 }
@@ -122,11 +123,12 @@ bool basic_async_sell_ten(std::string * fail_string) {
         debug_sell_amount_func = debug_sell_amount_REQUESTED;
         //Start program
         logical_account la;
-        key k = la.async_sell_stock("MSFT", 10);
-        la.wait_for_key_value(k);
+        auto key = la.async_sell_stock("MSFT", 10);
+        key.wait();
         uint32_t sold_stock = la.held_stock("MSFT");
         double account_cash = la.available_cash();
         THROW_IF_FALSE(sold_stock == 0, sold_stock);
+        THROW_IF_FALSE(sold_stock == key.get(), key.get());
         THROW_IF_FALSE(account_cash == 100, account_cash);
     )
 }
