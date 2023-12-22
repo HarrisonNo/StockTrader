@@ -19,6 +19,15 @@ def recursive_search_dir(path):
                 new_path = os.path.join(path, item)
                 recursive_search_dir(new_path)
 
+
+def delete_existing_executable():
+    listing = os.listdir(".")
+    for item in listing:
+        if os.path.isfile(item):
+            if item.endswith('.bin') or item.endswith('.exe'):
+                os.remove(item)
+
+
 def delete_construction_yard_sources():
     listing = os.listdir(".")
     for item in listing:
@@ -26,6 +35,21 @@ def delete_construction_yard_sources():
         if os.path.isfile(item) and (item.endswith('.h') or item.endswith('.cpp') or item.endswith('.o')):
             #print("ATTEMPTING TO DELETE ITEM: "+item)
             os.remove(item)
+
+def copy_exec_from_construction_yard():
+    listing = os.listdir("./construction_yard")
+    for item in listing:
+        #print("FOUND ITEM")
+        #print(item)
+        path_to_item = os.path.join("./construction_yard/", item)
+        if os.path.isfile(path_to_item):
+            #print("FOUND FILE")
+            #print(path_to_item)
+            if path_to_item.endswith('.bin') or path_to_item.endswith('.exe'):
+                #print("COPYING ITEM")
+                #print(path_to_item)
+                shutil.copy(path_to_item, os.getcwd())
+
 
 
 #MAIN
@@ -36,9 +60,15 @@ if (len(sys.argv) != 2):
 #Copy all source files to the construction_yard
 recursive_search_dir(".")
 #Run the makefile present in the construction yard with the requested arg
+delete_existing_executable()#delete exe in main folder
 os.chdir("construction_yard")
+delete_existing_executable()#delete exe in construction_yard
 make_string = "make " + sys.argv[1]
 print("Calling makefile with: " + make_string)
 os.system(make_string)
 #Delete all source files in the construction_yard
 delete_construction_yard_sources()
+os.chdir("../")
+copy_exec_from_construction_yard()
+os.chdir("./construction_yard")
+delete_existing_executable()

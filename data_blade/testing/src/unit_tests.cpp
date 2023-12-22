@@ -20,9 +20,9 @@
         ReturnVal = false; \
     } \
     if (ReturnVal) { \
-        std::cout<<"Status: PASSED"<<std::endl; \
+        std::cout<<"Status: PASSED"<<std::endl<<std::endl; \
     } else { \
-        std::cout<<"Status: FAILED with string: "<<FailString<<std::endl; \
+        std::cout<<"Status: FAILED with string: "<<FailString<<std::endl<<std::endl; \
     } \
     return ReturnVal;
 
@@ -33,7 +33,7 @@
 bool basic_class_creation() {
     UNIT_TEST_TRY_WRAPPER
     (
-        logical_account la;
+        logical_account la("test", false);
     )
 }
 
@@ -42,7 +42,7 @@ bool basic_class_creation() {
 //The main point of this is to run after basic_class_creation to showcase that we can create and destroy the account twice in a row with no saving/loading issues
 bool basic_heap_class_creation() {
     UNIT_TEST_TRY_WRAPPER(
-        logical_account * la = new logical_account;
+        logical_account * la = new logical_account("test", false);
         delete(la);
     )
 }
@@ -58,7 +58,7 @@ bool basic_purchase_ten() {
         debug_purchase_amount_func = debug_purchase_amount_REQUESTED;
         debug_sell_amount_func = debug_sell_amount_REQUESTED;
         //Start program
-        logical_account la;
+        logical_account la("test", false);
         la.buy_stock("MSFT", 10);
         uint32_t bought_stock = la.held_stock("MSFT");
         double account_cash = la.available_cash();
@@ -78,7 +78,7 @@ bool basic_async_purchase_ten() {
         debug_purchase_amount_func = debug_purchase_amount_REQUESTED;
         debug_sell_amount_func = debug_sell_amount_REQUESTED;
         //Start program
-        logical_account la;
+        logical_account la;//NOT SEPCIFY FALSE IS CRASHING THIS LMAO
         auto key = la.async_buy_stock("MSFT", 10);
         key.wait();
         uint32_t bought_stock = la.held_stock("MSFT");

@@ -198,7 +198,7 @@ Output:
 Description:
 Assumptions:
 */
-void _catch_invalid_dates(int16_t * year, int16_t * month, int16_t * day, int16_t * hour, int16_t * minute, int16_t * second) {
+void logical_ticker::_catch_invalid_dates(int16_t * year, int16_t * month, int16_t * day, int16_t * hour, int16_t * minute, int16_t * second) {
     time_t current_time;
     struct tm * time_info;
 
@@ -231,7 +231,7 @@ Output:
 Description:
 Assumptions:
 */
-void _date_corrections(int16_t * min_year, int16_t * min_month, int16_t * min_day, int16_t * min_hour, int16_t * min_minute, int16_t * min_second,
+void logical_ticker::_date_corrections(int16_t * min_year, int16_t * min_month, int16_t * min_day, int16_t * min_hour, int16_t * min_minute, int16_t * min_second,
                               int16_t * max_year, int16_t * max_month, int16_t * max_day, int16_t * max_hour, int16_t * max_minute, int16_t * max_second) {
     //https://cplusplus.com/reference/ctime/tm/
     //requested_year = years since 1900

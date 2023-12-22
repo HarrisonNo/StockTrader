@@ -410,8 +410,8 @@ Assumptions:
 */
 uint64_t logical_ticker::stock_prices_between_times(uint64_t calculation_limit, double * array_bank, int16_t min_year/* = INT16_MIN*/, int16_t min_month/* = INT16_MIN*/, int16_t min_day/* = INT16_MIN*/, int16_t min_hour/* = INT16_MIN*/, int16_t min_minute/* = INT16_MIN*/, int16_t min_second/* = INT16_MIN*/,
                                                                                                      int16_t max_year/* = INT16_MIN*/, int16_t max_month/* = INT16_MIN*/, int16_t max_day/* = INT16_MIN*/, int16_t max_hour/* = INT16_MIN*/, int16_t max_minute/* = INT16_MIN*/, int16_t max_second/* = INT16_MIN*/) {
-    uint16_t loop_month_max, loop_month_min, loop_catch_min, loop_catch_max;
-    uint16_t temp_day, temp_hour, temp_minute, temp_second, temp_price;
+    int16_t loop_month_max, loop_month_min, loop_catch_min, loop_catch_max;
+    int16_t temp_day, temp_hour, temp_minute, temp_second, temp_price;
     uint64_t array_bank_cnt = 0;
     std::fstream historical_price_file;
     std::string ticker_file_location;
