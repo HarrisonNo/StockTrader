@@ -27,7 +27,7 @@
     return ReturnVal;
 
 
-#define THROW_IF_FALSE(Statement, Var) if (!(Statement)) {throw "Failed unit test line %s which is "#Statement" with a value of "+std::to_string(Var), __LINE__;}//TODO have ASSERTS mimic this?
+#define THROW_IF_FALSE(Statement, Var) if (!(Statement)) {throw "Failed unit test line"+std::to_string(__LINE__)+"which is "#Statement" with a value of "+std::to_string(Var);}//TODO have ASSERTS mimic this?
 
 
 bool basic_class_creation() {
@@ -43,7 +43,7 @@ bool basic_class_creation() {
 bool basic_heap_class_creation() {
     UNIT_TEST_TRY_WRAPPER(
         logical_account * la = new logical_account;
-        free(la);
+        delete(la);
     )
 }
 
@@ -68,7 +68,7 @@ bool basic_purchase_ten() {
 }
 
 
-bool basic_async_purchase_ten(std::string * fail_string) {
+bool basic_async_purchase_ten() {
     UNIT_TEST_TRY_WRAPPER(
         //Set globals and defaults
         debug_amount_owned_SET_NATURAL_CHANGING(true);
@@ -90,7 +90,7 @@ bool basic_async_purchase_ten(std::string * fail_string) {
 }
 
 
-bool basic_sell_ten(std::string * fail_string) {
+bool basic_sell_ten() {
     UNIT_TEST_TRY_WRAPPER(
         //Set globals and defaults
         debug_amount_owned_SET_NATURAL_CHANGING(true);
@@ -111,7 +111,7 @@ bool basic_sell_ten(std::string * fail_string) {
 }
 
 
-bool basic_async_sell_ten(std::string * fail_string) {
+bool basic_async_sell_ten() {
     UNIT_TEST_TRY_WRAPPER(
         //Set globals and defaults
         debug_amount_owned_SET_NATURAL_CHANGING(true);

@@ -26,12 +26,12 @@ class logical_ticker {
         logical_account * _tied_account;
 
     //Functions
-        inline void _modify_transaction_list(int64_t amount, double price = -1);//Amount to add/remove from transaction list
-        inline void _load_transactions();
-        inline void _save_transactions();
-        inline void _save_stock_price_at_time(double stock_price, time_t current_time = 0);
-        inline void _catch_invalid_dates(int16_t * year, int16_t * month, int16_t * day, int16_t * hour, int16_t * minute, int16_t * second);
-        inline void _date_corrections(int16_t * min_year, int16_t * min_month, int16_t * min_day, int16_t * min_hour, int16_t * min_minute, int16_t * min_second,
+        void _modify_transaction_list(int64_t amount, double price = -1);//Amount to add/remove from transaction list
+        void _load_transactions();
+        void _save_transactions();
+        void _save_stock_price_at_time(double stock_price, time_t current_time = 0);
+        void _catch_invalid_dates(int16_t * year, int16_t * month, int16_t * day, int16_t * hour, int16_t * minute, int16_t * second);
+        void _date_corrections(int16_t * min_year, int16_t * min_month, int16_t * min_day, int16_t * min_hour, int16_t * min_minute, int16_t * min_second,
                                       int16_t * max_year, int16_t * max_month, int16_t * max_day, int16_t * max_hour, int16_t * max_minute, int16_t * max_second);
 
     //Abstract data types
@@ -67,6 +67,7 @@ class logical_ticker {
 
     public:
         logical_ticker(std::string input_ticker, bool allow_boot_loading = true);
+        ~logical_ticker();
 
         inline std::string ticker();
 
@@ -81,8 +82,9 @@ class logical_ticker {
         double stock_price(bool force_check = false);
         double stock_price_at_time(int16_t requested_year, int16_t requested_month, int16_t requested_day, int16_t requested_hour, int16_t requested_minute, int16_t requested_second,
                                    int16_t year_deviation = 0, int16_t month_deviation = 0, int16_t day_deviation = 0, int16_t hour_deviation = 0, int16_t minute_deviation = 0, int16_t second_deviation = 0);
+
         uint64_t stock_prices_between_times(uint64_t calculation_limit, double * array_bank, int16_t min_year = INT16_MIN, int16_t min_month = INT16_MIN, int16_t min_day = INT16_MIN, int16_t min_hour = INT16_MIN, int16_t min_minute = INT16_MIN, int16_t min_second = INT16_MIN,
-                                                                                         int16_t max_year = INT16_MIN, int16_t max_month = INT16_MIN, int16_t max_day = INT16_MIN, int16_t max_hour = INT16_MIN, int16_t max_minute = INT16_MIN, int16_t max_second = INT16_MIN);
+                                                                                             int16_t max_year = INT16_MIN, int16_t max_month = INT16_MIN, int16_t max_day = INT16_MIN, int16_t max_hour = INT16_MIN, int16_t max_minute = INT16_MIN, int16_t max_second = INT16_MIN);
 
         bool heartbeat();//Tests several calls from the wrapper to check if many operations are still possible
 };

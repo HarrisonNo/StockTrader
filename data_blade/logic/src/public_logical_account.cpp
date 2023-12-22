@@ -16,11 +16,11 @@ Assumptions:
 logical_account::logical_account(std::string account_name/* = "PLACEHOLDER"*/, bool load_existing/* = true*/) {
     _number_of_projections = 0;
     _time_last_checked_cash = 0;
-    _cheap_rng = 6942069;
     _account_name = account_name;
     //TODO add in loading saved ticker and other vals?
     if (!load_existing) {
         //Purge any and all existing files which may have been previously created
+        _purge_all_saved_info();
     } else {
 
     }
@@ -129,6 +129,18 @@ Assumptions:
 */
 std::future<uint32_t> logical_account::async_buy_stock(std::string ticker, uint32_t amount) {
     return std::async (logical_account::buy_stock, this, ticker, amount);
+}
+
+
+/*
+Input:
+Output:
+Description:
+Assumptions:
+*/
+uint32_t logical_account::held_stock(std::string ticker, bool force_check/* = false*/) {
+    logical_ticker * lt = _get_or_create_logical_ticker(ticker);
+    return lt->amount_owned(force_check);
 }
 
 

@@ -13,21 +13,21 @@
 //uint32_t debug_sell_amount_func(uint32_t)
 
 
-inline void debug_amount_owned_SET_GLOBAL(std::string ticker, uint32_t set_amount);
-inline void debug_amount_owned_SET_NATURAL_CHANGING(bool enable_changing);
+void debug_amount_owned_SET_GLOBAL(std::string ticker, uint32_t set_amount);
+void debug_amount_owned_SET_NATURAL_CHANGING(bool enable_changing);
 uint32_t debug_amount_owned_GLOBAL(std::string ticker);
 uint32_t debug_amount_owned_USER(std::string ticker);
 
 
 
-inline void debug_stock_price_SET_GLOBAL(std::string ticker, double set_price);
+void debug_stock_price_SET_GLOBAL(std::string ticker, double set_price);
 double debug_stock_price_GLOBAL(std::string ticker);
 double debug_stock_price_USER(std::string ticker);
 
 
 
-inline void debug_account_cash_SET_GLOBAL(double set_cash);
-inline void debug_account_cash_SET_NATURAL_CHANGING(bool enable_changing);
+void debug_account_cash_SET_GLOBAL(double set_cash);
+void debug_account_cash_SET_NATURAL_CHANGING(bool enable_changing);
 double debug_account_cash_GLOBAL();
 double debug_account_cash_USER();
 

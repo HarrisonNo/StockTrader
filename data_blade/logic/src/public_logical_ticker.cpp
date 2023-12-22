@@ -15,7 +15,7 @@ Output:
 Description:
 Assumptions:
 */
-logical_ticker::logical_ticker(std::string input_ticker, bool allow_boot_loading = true) {
+logical_ticker::logical_ticker(std::string input_ticker, bool allow_boot_loading/* = true*/) {
     _time_last_checked_price = 0;
     _time_last_checked_amount = 0;
     _time_last_executed_transaction = 0;
@@ -66,7 +66,7 @@ Output: returns the amount owned, 0 on wrapper failure(!!!!!!)
 Description: returns amount owned, minimizing wrapper calls if we already checked it recently 
 Assumptions:
 */
-uint32_t logical_ticker::amount_owned(bool force_check = false) {
+uint32_t logical_ticker::amount_owned(bool force_check/* = false*/) {
     time_t current_time = time(NULL);
     uint_fast32_t discrepancy, returned_amount_owned;
 
@@ -84,7 +84,7 @@ uint32_t logical_ticker::amount_owned(bool force_check = false) {
         returned_amount_owned = AMOUNT_OWNED_CALL(_ticker);
     }
     catch (std::exception &e) {
-        ASSERT(!("amount_owned wrapper failed with exception e:",e.what()));
+        ASSERT(!"amount_owned wrapper failed");
          _known_stock_amount_owned = 0;
         return 0;
     }
@@ -110,7 +110,7 @@ Output: current stock price, 0 on wrapper failure(!!!!!!)
 Description: gets the stock price, minimizing wrapper calls if we already checked it recently 
 Assumptions:
 */
-double logical_ticker::stock_price(bool force_check = false) {
+double logical_ticker::stock_price(bool force_check/* = false*/) {
     time_t current_time = time(NULL);
 
     if (!force_check && (current_time - _time_last_checked_price) > MAX_STOCK_PRICE_TIMEOUT) {
@@ -121,7 +121,7 @@ double logical_ticker::stock_price(bool force_check = false) {
         _stock_price = STOCK_PRICE_CALL(_ticker);
     }
     catch (std::exception &e) {
-        ASSERT(!("stock_price wrapper failed with exception e:",e.what()));
+        ASSERT(!"stock_price wrapper failed");
         //_trigger_wrapper_failure();//Increments var and checks if enough failures have occured within X seconds, if so then trigger a clean shutdown //TODO
         return 0;
     }
@@ -140,7 +140,6 @@ Description:
 Assumptions:
 */
 uint32_t logical_ticker::purchase_amount(uint32_t amount) {
-    uint_fast32_t already_held_amount = amount_owned();
     double current_stock_price = stock_price();
     double total_cost = current_stock_price * amount;
     double available_cash = _tied_account->available_cash();
@@ -161,7 +160,7 @@ uint32_t logical_ticker::purchase_amount(uint32_t amount) {
         amount = PURCHASE_AMOUNT(_ticker, amount);
     }
     catch (std::exception &e){
-        ASSERT(!("purchase_amount wrapper failed with exception e:",e.what()));
+        ASSERT(!"purchase_amount wrapper failed");
         amount = 0;
     }
 
@@ -171,9 +170,6 @@ uint32_t logical_ticker::purchase_amount(uint32_t amount) {
         return 0;
     }
 
-    //Launch a thread to check if we truly traded the requested amount after a short time period (~15? secs)
-    //In the logical_account
-    //We actually adjust the struct value in the thread
     return amount;
 }
 
@@ -184,11 +180,10 @@ Output: amount we BELIEVE we sold
 Description:
 Assumptions:
 */
-uint32_t logical_ticker::sell_amount(uint32_t amount, bool force_sell = false) {
+uint32_t logical_ticker::sell_amount(uint32_t amount, bool force_sell/* = false*/) {
     uint_fast32_t already_held_amount = amount_owned();
     uint_fast32_t selling_amount = 0;
     uint_fast32_t need_amount;
-    list_insert * transaction = _transactions.back();
 
     if (already_held_amount < amount) {
         amount = already_held_amount;
@@ -234,7 +229,7 @@ uint32_t logical_ticker::sell_amount(uint32_t amount, bool force_sell = false) {
         amount = SELL_AMOUNT(_ticker, selling_amount);
     }
     catch (std::exception &e){
-        ASSERT(!("sell_amount wrapper failed with exception e:",e.what()));
+        ASSERT(!"sell_amount wrapper failed");
         amount = 0;
     }
 
@@ -247,19 +242,13 @@ uint32_t logical_ticker::sell_amount(uint32_t amount, bool force_sell = false) {
 }
 
 
-uint32_t logical_account::held_stock(std::string ticker, bool force_check = false) {
-    logical_ticker * lt = _get_or_create_logical_ticker(ticker);
-    return lt->amount_owned(force_check);
-}
-
-
 /*
 Input:
 Output:
 Description:
 Assumptions:
 */
-inline void logical_ticker::modify_selling_at_loss(bool enabled) {
+void logical_ticker::modify_selling_at_loss(bool enabled) {
     _can_sell_at_loss_default = enabled;
 }
 
@@ -270,7 +259,7 @@ Output:
 Description:
 Assumptions:
 */
-inline std::string logical_ticker::ticker() {
+std::string logical_ticker::ticker() {
     return _ticker;
 }
 
@@ -282,7 +271,7 @@ inline std::string logical_ticker::ticker() {
                                  ((temp_day - requested_day) * 8640) + \
                                  ((month - requested_month) * 259200) + \
                                  ((year - requested_year) * 94608000)); \
-        if (final_badness_score == -1 || temp_badness_score < final_badness_score) { \
+        if (final_badness_score == INT_FAST64_MAX || abs(temp_badness_score) < abs(final_badness_score)) { \
             final_price = temp_price;\
             final_badness_score = temp_badness_score; \
         }
@@ -293,15 +282,15 @@ Output: Returns the requested price at the closest time to requested time within
 Description: Should we ever save some of the price points incore?
 Assumptions:
 */
-double logical_ticker::stock_price_at_time(int16_t requested_year = INT16_MIN, int16_t requested_month = INT16_MIN, int16_t requested_day = INT16_MIN, int16_t requested_hour = INT16_MIN, int16_t requested_minute = INT16_MIN, int16_t requested_second = INT16_MIN,
-                                           int16_t year_deviation = 0, int16_t month_deviation = 0, int16_t day_deviation = 0, int16_t hour_deviation = 0, int16_t minute_deviation = 0, int16_t second_deviation = 0) {
-    int_fast16_t max_year, min_year, closest_year = -1;
-    int_fast16_t max_month, min_month, closest_month, loop_month_min, loop_month_max, loop_catch_min, loop_catch_max;
-    int_fast16_t max_day, min_day, temp_day, closest_day;
-    int_fast16_t max_hour, min_hour, temp_hour, closest_hour;
-    int_fast16_t max_minute, min_minute, temp_minute, closest_minute;
-    int_fast16_t max_second, min_second, temp_second, closest_second;
-    uint_fast64_t temp_badness_score, final_badness_score = -1;//How far off the mark are we from a perfect request, the lower the better
+double logical_ticker::stock_price_at_time(int16_t requested_year/* = INT16_MIN*/, int16_t requested_month/* = INT16_MIN*/, int16_t requested_day/* = INT16_MIN*/, int16_t requested_hour/* = INT16_MIN*/, int16_t requested_minute/* = INT16_MIN*/, int16_t requested_second/* = INT16_MIN*/,
+                                           int16_t year_deviation/* = 0*/, int16_t month_deviation/* = 0*/, int16_t day_deviation/* = 0*/, int16_t hour_deviation/* = 0*/, int16_t minute_deviation/* = 0*/, int16_t second_deviation/* = 0*/) {
+    int_fast16_t max_year, min_year;
+    int_fast16_t max_month, min_month, loop_month_min, loop_month_max, loop_catch_min, loop_catch_max;
+    int_fast16_t max_day, min_day, temp_day;
+    int_fast16_t max_hour, min_hour, temp_hour;
+    int_fast16_t max_minute, min_minute, temp_minute;
+    int_fast16_t max_second, min_second, temp_second;
+    int_fast64_t temp_badness_score, final_badness_score = INT_FAST64_MAX;//How far off the mark are we from a perfect request, the lower the better
     std::fstream historical_price_file;
     double temp_price, final_price = -1;
     std::string ticker_file_location;
@@ -419,8 +408,8 @@ Output: fills array_bank with valid stock prices and returns the number of price
 Description: TODO move these time based funcs to another file and separate from class?
 Assumptions:
 */
-uint64_t logical_ticker::stock_prices_between_times(uint64_t calculation_limit, double * array_bank, int16_t min_year = INT16_MIN, int16_t min_month = INT16_MIN, int16_t min_day = INT16_MIN, int16_t min_hour = INT16_MIN, int16_t min_minute = INT16_MIN, int16_t min_second = INT16_MIN,
-                                                                                                     int16_t max_year = INT16_MIN, int16_t max_month = INT16_MIN, int16_t max_day = INT16_MIN, int16_t max_hour = INT16_MIN, int16_t max_minute = INT16_MIN, int16_t max_second = INT16_MIN) {
+uint64_t logical_ticker::stock_prices_between_times(uint64_t calculation_limit, double * array_bank, int16_t min_year/* = INT16_MIN*/, int16_t min_month/* = INT16_MIN*/, int16_t min_day/* = INT16_MIN*/, int16_t min_hour/* = INT16_MIN*/, int16_t min_minute/* = INT16_MIN*/, int16_t min_second/* = INT16_MIN*/,
+                                                                                                     int16_t max_year/* = INT16_MIN*/, int16_t max_month/* = INT16_MIN*/, int16_t max_day/* = INT16_MIN*/, int16_t max_hour/* = INT16_MIN*/, int16_t max_minute/* = INT16_MIN*/, int16_t max_second/* = INT16_MIN*/) {
     uint16_t loop_month_max, loop_month_min, loop_catch_min, loop_catch_max;
     uint16_t temp_day, temp_hour, temp_minute, temp_second, temp_price;
     uint64_t array_bank_cnt = 0;
@@ -432,7 +421,7 @@ uint64_t logical_ticker::stock_prices_between_times(uint64_t calculation_limit, 
     _date_corrections(&min_year, &min_month, &min_day, &min_hour, &min_minute, &min_second, &max_year, &max_month, &max_day, &max_hour, &max_minute, &max_second);
 
     if (calculation_limit == 0) {
-        return;
+        return 0;
     }
 
     for (int year = min_year; year <= max_year; year++) {
@@ -506,5 +495,5 @@ uint64_t logical_ticker::stock_prices_between_times(uint64_t calculation_limit, 
     //On hitting maximum range we goto here
     end:
     historical_price_file.close();
-    return;
+    return array_bank_cnt;
 }

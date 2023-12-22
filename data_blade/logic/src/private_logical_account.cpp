@@ -1,6 +1,8 @@
 #include <thread>
+#include <filesystem>
 #include "logical_account.h"
 #include "logical_ticker.h"
+#include "directory_file_saving.h"
 
 
 
@@ -10,7 +12,7 @@ Output: returns the logical ticker if it exists, NULL if otherwise
 Description:
 Assumptions:
 */
-inline logical_ticker * logical_account::_get_logical_ticker(std::string ticker) {
+logical_ticker * logical_account::_get_logical_ticker(std::string ticker) {
     if (auto search = _logical_tickers.find(ticker); search != _logical_tickers.end()) {
         return search->second;
     }
@@ -25,7 +27,7 @@ Output:
 Description:
 Assumptions:
 */
-inline logical_ticker * logical_account::_create_logical_ticker(std::string ticker) {
+logical_ticker * logical_account::_create_logical_ticker(std::string ticker) {
     logical_ticker * new_logical_ticker = new logical_ticker(ticker);
     _logical_tickers[ticker] = new_logical_ticker;
     return new_logical_ticker;
@@ -38,7 +40,7 @@ Output:
 Description:
 Assumptions:
 */
-inline logical_ticker * logical_account::_get_or_create_logical_ticker(std::string ticker) {
+logical_ticker * logical_account::_get_or_create_logical_ticker(std::string ticker) {
     logical_ticker * lt;
     lt = _get_logical_ticker(ticker);
     if (!lt) {
@@ -54,6 +56,19 @@ Output:
 Description: TODO save everything not related to a ticker here, fuck if I know what that should be yet though
 Assumptions:
 */
-inline void logical_account::_save_self() {
+void logical_account::_save_self() {
     return;
+}
+
+
+/*
+Input:
+Output:
+Description: TODO save everything not related to a ticker here, fuck if I know what that should be yet though
+Assumptions:
+*/
+void logical_account::_purge_all_saved_info() {
+    for (const auto &entry : std::filesystem::directory_iterator(SAVED_ACCOUNT_DIR(account_name()))) {
+        std::filesystem::remove_all(entry.path());
+    }
 }

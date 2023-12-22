@@ -21,8 +21,6 @@ class logical_account {
 
         uint8_t _number_of_projections;
 
-        uint64_t _cheap_rng;
-
         uint8_t _known_cash_amount:1;
         uint8_t _UNUSED_EIGHT_BITS:7;
 
@@ -34,20 +32,16 @@ class logical_account {
         wrapper_class _wrapper_vars;
 
     //Functions
-        inline logical_ticker * _get_logical_ticker(std::string ticker);//SWAP TO MAP OF LOGICAL_TICKERS
-        inline logical_ticker * _create_logical_ticker(std::string ticker);
-        inline logical_ticker * _get_or_create_logical_ticker(std::string ticker);
+        logical_ticker * _get_logical_ticker(std::string ticker);//SWAP TO MAP OF LOGICAL_TICKERS
+        logical_ticker * _create_logical_ticker(std::string ticker);
+        logical_ticker * _get_or_create_logical_ticker(std::string ticker);
 
-        inline void _save_self();
+        void _save_self();
+        void _purge_all_saved_info();
 
     //Abstract data types
-        class transaction_checker_insert {//https://en.cppreference.com/w/cpp/thread/async <----------------------------USE INSTEAD LMAO
-            public:
-                logical_ticker * lt;
-                uint32_t expected_amount;
-        };
-
         std::map<std::string, logical_ticker*> _logical_tickers;
+
     public:
         logical_account(std::string account_name = "PLACEHOLDER", bool load_existing = true);
         ~logical_account();

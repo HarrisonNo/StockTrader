@@ -18,12 +18,12 @@ bool debug_account_cash_NATURAL_CHANGING = false;
 //uint32_t debug_sell_amount_func(uint32_t)
 
 //AMOUNT_OWNED
-inline void debug_amount_owned_SET_GLOBAL(std::string ticker, uint32_t set_amount) {
+void debug_amount_owned_SET_GLOBAL(std::string ticker, uint32_t set_amount) {
     debug_amount_owned_GLOBAL_map[ticker] = set_amount;
 }
 
 
-inline void debug_amount_owned_SET_NATURAL_CHANGING(bool enable_changing) {
+void debug_amount_owned_SET_NATURAL_CHANGING(bool enable_changing) {
     debug_amount_owned_NATURAL_CHANGING = enable_changing;
 }
 
@@ -46,7 +46,7 @@ uint32_t debug_amount_owned_USER(std::string ticker) {
 
 
 //STOCK_PRICE
-inline void debug_stock_price_SET_GLOBAL(std::string ticker, double set_price) {
+void debug_stock_price_SET_GLOBAL(std::string ticker, double set_price) {
     debug_stock_price_GLOBAL_map[ticker] = set_price;
 }
 
@@ -69,12 +69,12 @@ double debug_stock_price_USER(std::string ticker) {
 
 
 //ACCOUNT CASH
-inline void debug_account_cash_SET_GLOBAL(double set_cash) {
+void debug_account_cash_SET_GLOBAL(double set_cash) {
     debug_account_cash_GLOBAL_var = set_cash;
 }
 
 
-inline void debug_account_cash_SET_NATURAL_CHANGING(bool enable_changing) {
+void debug_account_cash_SET_NATURAL_CHANGING(bool enable_changing) {
     debug_account_cash_NATURAL_CHANGING = enable_changing;
 }
 

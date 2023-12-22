@@ -14,7 +14,6 @@ Output:
 Description:
 Assumptions:
 */
-inline
 void logical_ticker::_load_transactions() {
     int temp_amount, temp_price;
     std::ifstream transaction_file;
@@ -38,10 +37,12 @@ Output:
 Description:
 Assumptions:
 */
-inline
 void logical_ticker::_save_transactions() {
     //_load_transactions is called on startup of logical_ticker which checks for transactions dir existence, no need to double check
     std::ofstream transaction_file;
+    if (!_known_stock_amount_owned) {
+        amount_owned();//Call to update in core transactions
+    }
     //Open with binary and truncate, binary removes the need/capability of catching shit like '\n' while truncate deletes the file if it already existed(possibly bad if we crashed previously?)
     transaction_file.open(SAVED_ACCOUNT_TRANSACTIONS_FILE(_tied_account->account_name(), _ticker), std::ios::out | std::ios::trunc);
     for(std::list<list_insert*>::iterator it = _transactions.begin(); it != _transactions.end(); ++it) {
@@ -58,7 +59,7 @@ Output:
 Description:
 Assumptions:
 */
-inline void logical_ticker::_modify_transaction_list(int64_t amount, double price/* = -1*/) {
+void logical_ticker::_modify_transaction_list(int64_t amount, double price/* = -1*/) {
     if (amount == 0) {
         return;
     }
@@ -138,7 +139,6 @@ Output:
 Description:
 Assumptions:
 */
-inline
 void logical_ticker::_save_stock_price_at_time(double stock_price, time_t current_time/* = 0*/) {
     struct tm * time_info;
     std::fstream historical_price_file;
@@ -198,7 +198,6 @@ Output:
 Description:
 Assumptions:
 */
-inline 
 void _catch_invalid_dates(int16_t * year, int16_t * month, int16_t * day, int16_t * hour, int16_t * minute, int16_t * second) {
     time_t current_time;
     struct tm * time_info;
@@ -232,7 +231,7 @@ Output:
 Description:
 Assumptions:
 */
-inline void _date_corrections(int16_t * min_year, int16_t * min_month, int16_t * min_day, int16_t * min_hour, int16_t * min_minute, int16_t * min_second,
+void _date_corrections(int16_t * min_year, int16_t * min_month, int16_t * min_day, int16_t * min_hour, int16_t * min_minute, int16_t * min_second,
                               int16_t * max_year, int16_t * max_month, int16_t * max_day, int16_t * max_hour, int16_t * max_minute, int16_t * max_second) {
     //https://cplusplus.com/reference/ctime/tm/
     //requested_year = years since 1900
