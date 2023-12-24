@@ -43,7 +43,7 @@ class logical_account {
         std::map<std::string, logical_ticker*> _logical_tickers;
 
     public:
-        logical_account(std::string account_name = "PLACEHOLDER", bool load_existing = true);
+        logical_account(std::string account_name, bool load_existing = true);
         ~logical_account();
 
         inline void mark_known_cash_unkown() {_known_cash_amount = 0;}
