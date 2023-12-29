@@ -142,7 +142,7 @@ Assumptions:
 void logical_ticker::_save_stock_price_at_time(double stock_price, time_t current_time/* = 0*/) {
     struct tm * time_info;
     std::fstream historical_price_file;
-    int16_t temp_day, temp_hour, temp_minute, temp_second;
+    time_t temp_time;
     double temp_price;
     std::streampos file_position;
 
@@ -155,31 +155,19 @@ void logical_ticker::_save_stock_price_at_time(double stock_price, time_t curren
     historical_price_file.open(HISTORICAL_TICKER_MONTH_FILE(_ticker, std::to_string(time_info->tm_year), std::to_string(time_info->tm_mon)), std::ios::in | std::ios::out);
     file_position = historical_price_file.tellg();//Stores postion of file at start, updated at end of every while loop
 
+    if (time_info->tm_year == _loaded_year && time_info->tm_mon == _loaded_month) {
+        std::pair<time_t, double> new_pair = std::make_pair(current_time, stock_price);
+        //This is absolutely cursed, insert into the vector ordered, with O(logN)
+        _historical_prices_month_file.insert(std::upper_bound(_historical_prices_month_file.begin(), _historical_prices_month_file.end(), new_pair), new_pair);
+    }
+
     //This breaks once we have gone right past where we want to insert
     //Insert after while loops finishes
-    while (historical_price_file >> temp_day >> temp_hour >> temp_minute >> temp_second >> temp_price) {
-        if (temp_day < time_info->tm_mday) {
+    while (historical_price_file >> temp_time >> temp_price) {
+        if (temp_time < current_time) {
             goto continue_while;
         }
-        if (temp_day > time_info->tm_mday) {
-            break;
-        }
-        if (temp_hour < time_info->tm_hour) {
-            goto continue_while;
-        }
-        if (temp_hour > time_info->tm_hour) {
-            break;
-        }
-        if (temp_minute < time_info->tm_min) {
-            goto continue_while;
-        }
-        if (temp_minute > time_info->tm_min) {
-            break;
-        }
-        if (temp_second < time_info->tm_sec) {
-            goto continue_while;
-        }
-        if (temp_second > time_info->tm_sec) {
+        if (temp_time > current_time) {
             break;
         }
         continue_while:
@@ -187,7 +175,8 @@ void logical_ticker::_save_stock_price_at_time(double stock_price, time_t curren
     }
     historical_price_file.seekg(file_position);
     //Save to file at specified position
-    historical_price_file << time_info->tm_mday << "\t" <<  time_info->tm_hour << "\t" << time_info->tm_min << "\t" << time_info->tm_sec << "\t" << stock_price << "\n";
+    historical_price_file << current_time << "\t" << stock_price << "\n";
+    historical_price_file.close();
     return;
 }
 
@@ -198,111 +187,34 @@ Output:
 Description:
 Assumptions:
 */
-void logical_ticker::_catch_invalid_dates(int16_t * year, int16_t * month, int16_t * day, int16_t * hour, int16_t * minute, int16_t * second) {
-    time_t current_time;
-    struct tm * time_info;
+void logical_ticker::_load_historical_price_file(int month = INT_MAX, int year = INT_MAX) {
+    std::fstream historical_price_file;
+    double temp_price;
+    time_t temp_time, current_time = time(NULL);
+    struct tm * time_info = localtime(&current_time);
 
-    time(&current_time);
-    time_info = localtime(&current_time);
-    if (*year == INT16_MAX || *year == INT16_MIN) {
-        *year = time_info->tm_year;
+    if (month == INT_MAX) {
+        month = time_info->tm_mon;
     }
-    if (*month == INT16_MAX || *month == INT16_MIN) {
-        *month = time_info->tm_mon;
+    if (year == INT_MAX) {
+        year = time_info->tm_year;
     }
-    if (*day == INT16_MAX || *day == INT16_MIN) {
-        *day = time_info->tm_mday;
-    }
-    if (*hour == INT16_MAX || *hour == INT16_MIN) {
-        *hour = time_info->tm_hour;
-    }
-    if (*minute == INT16_MAX || *minute == INT16_MIN) {
-        *minute = time_info->tm_min;
-    }
-    if (*second == INT16_MAX || *second == INT16_MIN) {
-        *second = time_info->tm_sec;
-    }
-}
-
-
-/*
-Input:
-Output:
-Description:
-Assumptions:
-*/
-void logical_ticker::_date_corrections(int16_t * min_year, int16_t * min_month, int16_t * min_day, int16_t * min_hour, int16_t * min_minute, int16_t * min_second,
-                              int16_t * max_year, int16_t * max_month, int16_t * max_day, int16_t * max_hour, int16_t * max_minute, int16_t * max_second) {
-    //https://cplusplus.com/reference/ctime/tm/
-    //requested_year = years since 1900
-    //requested_month = months since january 0-11
-    //requested_day = days of the month 1-31
-    //reqeusted_hour = hours since midnight 0-23
-    //requested_minute = minutes after the hour 0-59
-    //requested_second = seconds after the minute 0-59
-    uint8_t days_per_month[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-
-    while (*max_second > 59) {
-        *max_minute += 1;
-        *max_second -= 60;
-    }
-    while (*min_second < 0) {
-        *min_minute -= 1;
-        *min_second += 60;
+    
+    if (_loaded_year == year && _loaded_month == month) {
+        return;//No need to load anything
     }
 
-    while (*max_minute > 59) {
-        *max_hour += 1;
-        *max_minute -= 60;
-    }
-    while (*min_minute < 0) {
-        *min_hour -= 1;
-        *min_minute += 60;
+    _loaded_year = year;
+    _loaded_month = month;
+    _historical_prices_month_file.clear();
+
+    //Read in specific file
+    check_and_create_dirs(HISTORICAL_TICKER_YEAR_DIR(_ticker, std::to_string(year)));
+    historical_price_file.open(HISTORICAL_TICKER_MONTH_FILE(_ticker, std::to_string(year), std::to_string(month)), std::ios::in | std::ios::out);
+    while(historical_price_file >> temp_time >> temp_time) {
+        _historical_prices_month_file.emplace_back(temp_time, temp_price);
     }
 
-    while (*max_hour > 23) {
-        *max_day += 1;
-        *max_hour -= 24;
-    }
-    while (*min_hour < 0) {
-        *min_day -= 1;
-        *min_hour += 24;
-    }
-
-    /* Need to catch potential over/underflow constantly */
-
-    while (*max_month > 11) {
-        *max_year += 1;
-        *max_month -= 12;
-    }
-    while (*min_month < 0) {
-        *min_year -= 1;
-        *min_month +=12;
-    }
-
-    while (*max_day > days_per_month[*max_month]) {
-        *max_day -= days_per_month[*max_month];
-        *max_month += 1;
-        while (*max_month > 11) {
-            *max_year += 1;
-            *max_month -= 12;
-        }
-    }
-    while (*min_day < 0) {
-        *min_day -= days_per_month[*min_month];
-        *min_month -= 1;
-        while (*min_month < 0) {
-            *min_year -= 1;
-            *min_month +=12;
-        }
-    }
-
-    while (*max_month > 11) {
-        *max_year += 1;
-        *max_month -= 12;
-    }
-    while (*min_month < 0) {
-        *min_year -= 1;
-        *min_month +=12;
-    }
+    historical_price_file.close();
+    return ;
 }

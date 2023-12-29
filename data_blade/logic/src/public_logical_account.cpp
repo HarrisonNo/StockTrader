@@ -2,6 +2,7 @@
 #include "logical_account.h"
 #include "assert_and_verify.h"
 #include "logical_ticker.h"
+#include <memory>
 
 
 #define MAX_KNOWN_SEC_TIMEOUT 21600 //Max number of seconds we can use our stored known amount before double checking (6 hours)
@@ -254,3 +255,16 @@ Assumptions:
 std::future<double> logical_account::async_stock_price(std::string ticker, bool force_check/* = false*/) {
     return std::async (logical_account::stock_price, this, ticker, force_check);
 }
+
+
+/*
+Input:
+Output:
+Description:
+Assumptions:
+*/
+std::vector<std::pair<time_t, double>> * logical_account::get_historical_price_in_range(std::string ticker, time_t min_time, time_t max_time) {
+    logical_ticker * lt = _get_or_create_logical_ticker(ticker);
+    return &(lt->load_historical_prices(min_time, max_time));
+}
+

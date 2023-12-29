@@ -24,6 +24,8 @@ logical_ticker::logical_ticker(std::string input_ticker, bool allow_boot_loading
     _ticker = input_ticker;
     _can_sell_at_loss_default = 0;
     _transactions_list_stock_count = 0;
+    _loaded_month = INT_MAX;
+    _loaded_year = INT_MAX;
     if (allow_boot_loading) {
         _load_transactions();
     }
@@ -262,4 +264,29 @@ Assumptions:
 */
 std::string logical_ticker::ticker() {
     return _ticker;
+}
+
+
+/*
+Input:
+Output:
+Description: This could 100% be optimized by storing start and end times and simply correcting our held vector, TODO
+Assumptions:
+*/
+std::vector<std::pair<time_t, double>> logical_ticker::load_historical_prices(time_t start_time, time_t end_time) {
+    struct tm * start_time_info = localtime(&start_time);
+    struct tm * end_time_info = localtime(&end_time);
+    _historical_prices_ranged.clear();
+    while (start_time_info->tm_year < end_time_info->tm_year || ((start_time_info->tm_mon <= end_time_info->tm_mon) && start_time_info->tm_year == end_time_info->tm_year)) {
+        _load_historical_price_file(start_time_info->tm_mon, start_time_info->tm_year);
+        for (std::pair<time_t, double> pr : _historical_prices_month_file) {
+            if (pr.first >= start_time && pr.first <= end_time) {
+                _historical_prices_ranged.push_back(pr);
+            }
+        }
+        /* End */
+        start_time_info->tm_mon++;
+        time_t temp_time = mktime(start_time_info);
+        start_time_info = localtime(&temp_time);
+    }
 }

@@ -1,9 +1,9 @@
 #include <string>
 #include <mutex>
-#include <list>
 #include <map>
 #include <future>
 #include "api.h"
+#include "time_keeper.h"
 
 #ifndef LOGICAL_ACCOUNT
 #define LOGICAL_ACCOUNT
@@ -58,6 +58,8 @@ class logical_account {
         std::future<uint32_t> async_buy_stock(std::string ticker, uint32_t amount);
         std::future<uint32_t> async_sell_stock(std::string ticker, uint32_t amount, bool force_sell = false);
         std::future<double> async_stock_price(std::string ticker, bool force_check = false);
+
+        std::vector<std::pair<time_t, double>> * get_historical_price_in_range(std::string ticker, time_t min_time, time_t max_time);//Returns a pointer to a vector that holds an array of pairs of times and prices, USE TIME1/TIME2/TIME3
 
         void trigger_mass_save();//Called to save everything and prepare for shutdown
 
