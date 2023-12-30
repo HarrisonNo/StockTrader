@@ -75,7 +75,7 @@ class logical_ticker {
         
         double stock_price(bool force_check = false);
 
-        std::vector<std::pair<time_t, double>> load_historical_prices(time_t start_time, time_t end_time);//Returns pointer to loaded vector
+        std::vector<std::pair<time_t, double>> * load_historical_prices(time_t start_time, time_t end_time);//Returns pointer to loaded vector
 
         bool heartbeat();//Tests several calls from the wrapper to check if many operations are still possible
 };

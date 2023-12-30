@@ -187,7 +187,7 @@ Output:
 Description:
 Assumptions:
 */
-void logical_ticker::_load_historical_price_file(int month = INT_MAX, int year = INT_MAX) {
+void logical_ticker::_load_historical_price_file(int month/* = INT_MAX*/, int year/* = INT_MAX*/) {
     std::fstream historical_price_file;
     double temp_price;
     time_t temp_time, current_time = time(NULL);

@@ -2,7 +2,7 @@
 #include "logical_account.h"
 #include "assert_and_verify.h"
 #include "logical_ticker.h"
-#include <memory>
+#include "directory_file_saving.h"
 
 
 #define MAX_KNOWN_SEC_TIMEOUT 21600 //Max number of seconds we can use our stored known amount before double checking (6 hours)
@@ -18,13 +18,12 @@ logical_account::logical_account(std::string account_name/* = "PLACEHOLDER"*/, b
     _number_of_projections = 0;
     _time_last_checked_cash = 0;
     _account_name = account_name;
-    //TODO add in loading saved ticker and other vals?
+    check_and_create_dirs(SAVED_ACCOUNT_DIR(account_name));
     if (!load_existing) {
         //Purge any and all existing files which may have been previously created
         _purge_all_saved_info();
-    } else {
-
     }
+    //Everything else will get auto loaded as we call the respective ticker funcs
 }
 
 
@@ -265,6 +264,6 @@ Assumptions:
 */
 std::vector<std::pair<time_t, double>> * logical_account::get_historical_price_in_range(std::string ticker, time_t min_time, time_t max_time) {
     logical_ticker * lt = _get_or_create_logical_ticker(ticker);
-    return &(lt->load_historical_prices(min_time, max_time));
+    return lt->load_historical_prices(min_time, max_time);
 }
 

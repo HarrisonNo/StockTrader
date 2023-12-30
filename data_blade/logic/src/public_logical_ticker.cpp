@@ -273,7 +273,7 @@ Output:
 Description: This could 100% be optimized by storing start and end times and simply correcting our held vector, TODO
 Assumptions:
 */
-std::vector<std::pair<time_t, double>> logical_ticker::load_historical_prices(time_t start_time, time_t end_time) {
+std::vector<std::pair<time_t, double>> * logical_ticker::load_historical_prices(time_t start_time, time_t end_time) {
     struct tm * start_time_info = localtime(&start_time);
     struct tm * end_time_info = localtime(&end_time);
     _historical_prices_ranged.clear();
@@ -289,4 +289,5 @@ std::vector<std::pair<time_t, double>> logical_ticker::load_historical_prices(ti
         time_t temp_time = mktime(start_time_info);
         start_time_info = localtime(&temp_time);
     }
+    return &_historical_prices_ranged;
 }

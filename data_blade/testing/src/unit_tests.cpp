@@ -78,7 +78,7 @@ bool basic_async_purchase_ten() {
         debug_purchase_amount_func = debug_purchase_amount_REQUESTED;
         debug_sell_amount_func = debug_sell_amount_REQUESTED;
         //Start program
-        logical_account la;//NOT SEPCIFY FALSE IS CRASHING THIS LMAO
+        logical_account la("test");//NOT SEPCIFY FALSE IS CRASHING THIS LMAO
         auto key = la.async_buy_stock("MSFT", 10);
         key.wait();
         uint32_t bought_stock = la.held_stock("MSFT");
@@ -101,7 +101,7 @@ bool basic_sell_ten() {
         debug_purchase_amount_func = debug_purchase_amount_REQUESTED;
         debug_sell_amount_func = debug_sell_amount_REQUESTED;
         //Start program
-        logical_account la;
+        logical_account la("test");
         la.sell_stock("MSFT", 10);
         uint32_t sold_stock = la.held_stock("MSFT");
         double account_cash = la.available_cash();
@@ -122,7 +122,7 @@ bool basic_async_sell_ten() {
         debug_purchase_amount_func = debug_purchase_amount_REQUESTED;
         debug_sell_amount_func = debug_sell_amount_REQUESTED;
         //Start program
-        logical_account la;
+        logical_account la("test");
         auto key = la.async_sell_stock("MSFT", 10);
         key.wait();
         uint32_t sold_stock = la.held_stock("MSFT");

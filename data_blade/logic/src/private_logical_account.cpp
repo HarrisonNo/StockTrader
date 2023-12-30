@@ -64,7 +64,7 @@ void logical_account::_save_self() {
 /*
 Input:
 Output:
-Description: TODO save everything not related to a ticker here, fuck if I know what that should be yet though
+Description:
 Assumptions:
 */
 void logical_account::_purge_all_saved_info() {
