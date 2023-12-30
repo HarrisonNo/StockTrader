@@ -29,7 +29,6 @@
 
 #define THROW_IF_FALSE(Statement, Var) if (!(Statement)) {throw "Failed unit test line"+std::to_string(__LINE__)+"which is "#Statement" with a value of "+std::to_string(Var);}//TODO have ASSERTS mimic this?
 
-
 bool basic_class_creation() {
     UNIT_TEST_TRY_WRAPPER
     (
@@ -48,7 +47,7 @@ bool basic_heap_class_creation() {
 }
 
 
-bool basic_purchase_ten() {
+bool basic_purchase_ten() {//TODO IMPLEMENT GDB DEBUG MODE CUZ THIS VERBOSE PRINTING IS DODO
     UNIT_TEST_TRY_WRAPPER(
         //Set globals and defaults
         debug_amount_owned_SET_NATURAL_CHANGING(true);

@@ -14,6 +14,3 @@ $(EXECUTABLE): $(OBJECTS)
 
 %.o: %.cpp $(HEADERS)
 	$(CC) $(CFLAGS) -c -o $@ $<
-
-clean:
-	$(RM) *.o *~ $(EXECUTABLE)
