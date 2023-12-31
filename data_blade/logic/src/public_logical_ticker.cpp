@@ -200,8 +200,8 @@ uint32_t logical_ticker::sell_amount(uint32_t amount, bool force_sell/* = false*
         return 0;
     }
 
-    if (_transactions.size() < amount) {//We do not know the transaction history of some of these stocks, current behavior is to sell
-        selling_amount = amount - _transactions.size();
+    if (_transactions_list_stock_count < amount) {//We do not know the transaction history of some of these stocks, current behavior is to sell
+        selling_amount = amount - _transactions_list_stock_count;
     }
 
     for(std::list<list_insert*>::iterator it = _transactions.begin(); it != _transactions.end(); ++it) {
