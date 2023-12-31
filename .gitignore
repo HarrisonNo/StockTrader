@@ -404,5 +404,5 @@ FodyWeavers.xsd
 *.sln.iml
 
 #CUSTOM any saved_info
-.saved_info/
-.saved_info/*
+saved_info/
+saved_info/*
