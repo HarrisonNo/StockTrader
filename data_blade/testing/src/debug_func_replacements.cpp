@@ -3,11 +3,13 @@
 
 //TODO make use of static vars for significant changes
 
+#define DEFAULT_ACCOUNT_CASH_AMOUNT 0
+
 //Global vars
 std::map<std::string, uint32_t> debug_amount_owned_GLOBAL_map;
 bool debug_amount_owned_NATURAL_CHANGING = true;
 std::map<std::string, double> debug_stock_price_GLOBAL_map;
-double debug_account_cash_GLOBAL_var = 0;
+double debug_account_cash_GLOBAL_var = DEFAULT_ACCOUNT_CASH_AMOUNT;
 bool debug_account_cash_NATURAL_CHANGING = true;
 
 //So far five types of debug funcs
@@ -25,6 +27,10 @@ void debug_amount_owned_SET_GLOBAL(std::string ticker, uint32_t set_amount) {
 
 void debug_amount_owned_SET_NATURAL_CHANGING(bool enable_changing) {
     debug_amount_owned_NATURAL_CHANGING = enable_changing;
+}
+
+void debug_amount_owned_RESET_GLOBAL() {
+    debug_amount_owned_GLOBAL_map.clear();
 }
 
 
@@ -50,6 +56,10 @@ void debug_stock_price_SET_GLOBAL(std::string ticker, double set_price) {
     debug_stock_price_GLOBAL_map[ticker] = set_price;
 }
 
+void debug_stock_price_RESET_GLOBAL() {
+    debug_stock_price_GLOBAL_map.clear();
+}
+
 
 double debug_stock_price_GLOBAL(std::string ticker) {
     if (auto search = debug_stock_price_GLOBAL_map.find(ticker); search != debug_stock_price_GLOBAL_map.end()) {
@@ -73,6 +83,9 @@ void debug_account_cash_SET_GLOBAL(double set_cash) {
     debug_account_cash_GLOBAL_var = set_cash;
 }
 
+void debug_account_cash_RESET_GLOBAL() {
+    debug_account_cash_GLOBAL_var = DEFAULT_ACCOUNT_CASH_AMOUNT;
+}
 
 void debug_account_cash_SET_NATURAL_CHANGING(bool enable_changing) {
     debug_account_cash_NATURAL_CHANGING = enable_changing;

@@ -24,6 +24,7 @@ logical_account::logical_account(std::string account_name/* = "PLACEHOLDER"*/, b
         _purge_all_saved_info();
     }
     //Everything else will get auto loaded as we call the respective ticker funcs
+    check_and_create_dirs(SAVED_ACCOUNT_DIR(account_name));//Do a second time in case we purged the previous case
 }
 
 

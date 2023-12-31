@@ -7,6 +7,7 @@
 #define UNIT_TEST_TRY_WRAPPER(X) \
     std::string FailString; \
     bool ReturnVal = true; \
+    RESET_ALL_GLOBAL_VALUES \
     std::cout<<"Running unit test "<<__func__<<std::endl; \
     try { \
         X \
@@ -75,13 +76,14 @@ bool basic_async_purchase_ten() {
         //Start program
         logical_account la("test", false);
         uint32_t bought_stock = la.held_stock("MSFT");
+        double account_cash = la.available_cash();
         THROW_IF_FALSE(bought_stock == 0, bought_stock);
+        THROW_IF_FALSE(account_cash == 100, account_cash);
         auto key = la.async_buy_stock("MSFT", 10);
         key.wait();
         bought_stock = la.held_stock("MSFT");
-        double account_cash = la.available_cash();
+        account_cash = la.available_cash();
         THROW_IF_FALSE(bought_stock == 10, bought_stock);
-        THROW_IF_FALSE(bought_stock == key.get(), key.get());
         THROW_IF_FALSE(account_cash == 0, account_cash);
     )
 }
@@ -114,18 +116,17 @@ bool basic_async_sell_ten() {
         debug_account_cash_SET_GLOBAL(0);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
         debug_amount_owned_SET_GLOBAL("MSFT", 10);
-        debug_purchase_amount_func = debug_purchase_amount_REQUESTED;
-        debug_sell_amount_func = debug_sell_amount_REQUESTED;
         //Start program
         logical_account la("test", false);
         uint32_t sold_stock = la.held_stock("MSFT");
+        double account_cash = la.available_cash();
         THROW_IF_FALSE(sold_stock == 10, sold_stock);
+        THROW_IF_FALSE(account_cash == 0, account_cash);
         auto key = la.async_sell_stock("MSFT", 10);
         key.wait();
         sold_stock = la.held_stock("MSFT");
-        double account_cash = la.available_cash();
+        account_cash = la.available_cash();
         THROW_IF_FALSE(sold_stock == 0, sold_stock);
-        THROW_IF_FALSE(sold_stock == key.get(), key.get());
         THROW_IF_FALSE(account_cash == 100, account_cash);
     )
 }

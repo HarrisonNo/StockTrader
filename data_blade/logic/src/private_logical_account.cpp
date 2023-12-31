@@ -68,7 +68,5 @@ Description:
 Assumptions:
 */
 void logical_account::_purge_all_saved_info() {
-    for (const auto &entry : std::filesystem::directory_iterator(SAVED_ACCOUNT_DIR(account_name()))) {
-        std::filesystem::remove_all(entry.path());
-    }
+    std::filesystem::remove_all(SAVED_ACCOUNT_DIR(account_name()));
 }
