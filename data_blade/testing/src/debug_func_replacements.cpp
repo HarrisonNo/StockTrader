@@ -5,10 +5,10 @@
 
 //Global vars
 std::map<std::string, uint32_t> debug_amount_owned_GLOBAL_map;
-bool debug_amount_owned_NATURAL_CHANGING = false;
+bool debug_amount_owned_NATURAL_CHANGING = true;
 std::map<std::string, double> debug_stock_price_GLOBAL_map;
 double debug_account_cash_GLOBAL_var = 0;
-bool debug_account_cash_NATURAL_CHANGING = false;
+bool debug_account_cash_NATURAL_CHANGING = true;
 
 //So far five types of debug funcs
 //uint32_t debug_amount_owned_func(std::string)

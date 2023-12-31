@@ -29,15 +29,17 @@ def delete_existing_executable():
 
 
 def delete_construction_yard_sources():
+    os.chdir("construction_yard")
     listing = os.listdir(".")
     for item in listing:
         #print("THE CURRENT ITEM IS:"+item)
         if os.path.isfile(item) and (item.endswith('.h') or item.endswith('.cpp') or item.endswith('.o')):
             #print("ATTEMPTING TO DELETE ITEM: "+item)
             os.remove(item)
+    os.chdir("../")
 
 def copy_exec_from_construction_yard():
-    listing = os.listdir("./construction_yard")
+    listing = os.listdir("construction_yard")
     for item in listing:
         #print("FOUND ITEM")
         #print(item)
@@ -51,6 +53,8 @@ def copy_exec_from_construction_yard():
                 shutil.copy(path_to_item, os.getcwd())
 
 def copy_sources_build_exec(make_arg):
+    #Delete all source files in the construction_yard
+    delete_construction_yard_sources()
     #Copy all source files to the construction_yard
     recursive_search_dir(".")
     #Run the makefile present in the construction yard with the requested arg
@@ -60,8 +64,6 @@ def copy_sources_build_exec(make_arg):
     make_string = "make " + make_arg
     print("Calling makefile with: " + make_string)
     os.system(make_string)
-    #Delete all source files in the construction_yard
-    delete_construction_yard_sources()
     os.chdir("../")
     copy_exec_from_construction_yard()
     os.chdir("./construction_yard")
@@ -82,11 +84,10 @@ launch_gdb = False
 make_arg = sys.argv[1]
 
 match make_arg:
-    case "build_debug_all":
-        make_arg = "all"
-    case "debug_all":
+    case "build_debug":
+        make_arg = "debug"
+    case "debug":
         launch_gdb = True
-        make_arg = "all"
     case "build_all":
         make_arg = "all"
     case "all":
@@ -102,7 +103,15 @@ if (launch_program or launch_gdb):
         if os.path.isfile(item):
             if item.endswith('.bin') or item.endswith('.exe'):
                 exec = item
+
+    if (not launch_gdb):
+        #Delete sources before program runs unless we are going to go into gdb, in which case keep the sources around until after we close gdb(needed to more cleanly investigate source code in gdb)
+        delete_construction_yard_sources()
     if (launch_program):
-        print("Launching program")
-        print(exec)
+        print("Launching program: " + exec + "\n")
         os.system(exec)
+    if (launch_gdb):
+        print("Launching program under gdb: " + exec + "\n")
+        os.system("gdb " + exec)
+        delete_construction_yard_sources()
+

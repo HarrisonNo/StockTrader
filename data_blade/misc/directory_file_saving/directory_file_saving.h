@@ -5,7 +5,7 @@
 #define DIRECTORY_FILE_SAVING
 
 
-#define GLOBAL_SAVED_INFO_DIR "./StockTrader/saved_info/"
+#define GLOBAL_SAVED_INFO_DIR "saved_info/"
 
 //Some pathways may change based on debug/non-debug api
 #if DEBUG_API

@@ -37,10 +37,10 @@ logical_account::~logical_account() {
     //Save ourselves
     _save_self();
     //Tickers will automatically be saved on being freed as the destructor auto saves each
-    for (auto it = _logical_tickers.begin(); it != _logical_tickers.end(); it++) {
+    for (auto it = _logical_tickers.cbegin(); it != _logical_tickers.cend();) {
         //Call delete to trigger destructor
         logical_ticker * lt = it->second;
-        _logical_tickers.erase(it);
+        _logical_tickers.erase(it++);
         delete(lt);
     }
     //Then delete all as we are falling out of scope
@@ -208,7 +208,7 @@ double logical_account::available_cash(bool force_check/* = false*/) {
     time_t current_time = time(NULL);
     double internal_cash;
 
-    if (_known_cash_amount && !force_check && ((current_time - _time_last_checked_cash) > MAX_KNOWN_SEC_TIMEOUT)) {
+    if (_known_cash_amount && !force_check && ((current_time - _time_last_checked_cash) < MAX_KNOWN_SEC_TIMEOUT)) {
         return _cash;
     }
 

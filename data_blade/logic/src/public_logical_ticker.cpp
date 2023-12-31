@@ -16,7 +16,7 @@ Output:
 Description:
 Assumptions:
 */
-logical_ticker::logical_ticker(std::string input_ticker, bool allow_boot_loading/* = true*/) {
+logical_ticker::logical_ticker(std::string input_ticker, logical_account * tied_account, bool allow_boot_loading/* = true*/) {
     _time_last_checked_price = 0;
     _time_last_checked_amount = 0;
     _time_last_executed_transaction = 0;
@@ -26,6 +26,8 @@ logical_ticker::logical_ticker(std::string input_ticker, bool allow_boot_loading
     _transactions_list_stock_count = 0;
     _loaded_month = INT_MAX;
     _loaded_year = INT_MAX;
+    _tied_account = tied_account;
+    _stock_price = 0;
     if (allow_boot_loading) {
         _load_transactions();
     }
@@ -116,7 +118,7 @@ Assumptions:
 double logical_ticker::stock_price(bool force_check/* = false*/) {
     time_t current_time = time(NULL);
 
-    if (!force_check && (current_time - _time_last_checked_price) > MAX_STOCK_PRICE_TIMEOUT) {
+    if (!force_check && (current_time - _time_last_checked_price) < MAX_STOCK_PRICE_TIMEOUT) {
         return _stock_price;
     }
 

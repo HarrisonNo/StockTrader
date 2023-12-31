@@ -28,7 +28,7 @@ Description:
 Assumptions:
 */
 logical_ticker * logical_account::_create_logical_ticker(std::string ticker) {
-    logical_ticker * new_logical_ticker = new logical_ticker(ticker);
+    logical_ticker * new_logical_ticker = new logical_ticker(ticker, this);
     _logical_tickers[ticker] = new_logical_ticker;
     return new_logical_ticker;
 }

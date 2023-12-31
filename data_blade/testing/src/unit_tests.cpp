@@ -27,7 +27,7 @@
     return ReturnVal;
 
 
-#define THROW_IF_FALSE(Statement, Var) if (!(Statement)) {throw "Failed unit test line"+std::to_string(__LINE__)+"which is "#Statement" with a value of "+std::to_string(Var);}//TODO have ASSERTS mimic this?
+#define THROW_IF_FALSE(Statement, Var) if (!(Statement)) {throw "Failed unit test line "+std::to_string(__LINE__)+" which is '"#Statement"' with a value of "+std::to_string(Var);}//TODO have ASSERTS mimic this?
 
 bool basic_class_creation() {
     UNIT_TEST_TRY_WRAPPER
@@ -47,20 +47,20 @@ bool basic_heap_class_creation() {
 }
 
 
-bool basic_purchase_ten() {//TODO IMPLEMENT GDB DEBUG MODE CUZ THIS VERBOSE PRINTING IS DODO
+bool basic_purchase_ten() {
     UNIT_TEST_TRY_WRAPPER(
         //Set globals and defaults
-        debug_amount_owned_SET_NATURAL_CHANGING(true);
-        debug_account_cash_SET_NATURAL_CHANGING(true);
         debug_account_cash_SET_GLOBAL(100);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
-        debug_purchase_amount_func = debug_purchase_amount_REQUESTED;
-        debug_sell_amount_func = debug_sell_amount_REQUESTED;
         //Start program
         logical_account la("test", false);
-        la.buy_stock("MSFT", 10);
         uint32_t bought_stock = la.held_stock("MSFT");
         double account_cash = la.available_cash();
+        THROW_IF_FALSE(bought_stock == 0, bought_stock);
+        THROW_IF_FALSE(account_cash == 100, account_cash);
+        la.buy_stock("MSFT", 10);
+        bought_stock = la.held_stock("MSFT");
+        account_cash = la.available_cash();
         THROW_IF_FALSE(bought_stock == 10, bought_stock);
         THROW_IF_FALSE(account_cash == 0, account_cash);
     )
@@ -70,17 +70,15 @@ bool basic_purchase_ten() {//TODO IMPLEMENT GDB DEBUG MODE CUZ THIS VERBOSE PRIN
 bool basic_async_purchase_ten() {
     UNIT_TEST_TRY_WRAPPER(
         //Set globals and defaults
-        debug_amount_owned_SET_NATURAL_CHANGING(true);
-        debug_account_cash_SET_NATURAL_CHANGING(true);
         debug_account_cash_SET_GLOBAL(100);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
-        debug_purchase_amount_func = debug_purchase_amount_REQUESTED;
-        debug_sell_amount_func = debug_sell_amount_REQUESTED;
         //Start program
-        logical_account la("test");//NOT SEPCIFY FALSE IS CRASHING THIS LMAO
+        logical_account la("test", false);
+        uint32_t bought_stock = la.held_stock("MSFT");
+        THROW_IF_FALSE(bought_stock == 0, bought_stock);
         auto key = la.async_buy_stock("MSFT", 10);
         key.wait();
-        uint32_t bought_stock = la.held_stock("MSFT");
+        bought_stock = la.held_stock("MSFT");
         double account_cash = la.available_cash();
         THROW_IF_FALSE(bought_stock == 10, bought_stock);
         THROW_IF_FALSE(bought_stock == key.get(), key.get());
@@ -92,18 +90,18 @@ bool basic_async_purchase_ten() {
 bool basic_sell_ten() {
     UNIT_TEST_TRY_WRAPPER(
         //Set globals and defaults
-        debug_amount_owned_SET_NATURAL_CHANGING(true);
-        debug_account_cash_SET_NATURAL_CHANGING(true);
         debug_account_cash_SET_GLOBAL(0);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
         debug_amount_owned_SET_GLOBAL("MSFT", 10);
-        debug_purchase_amount_func = debug_purchase_amount_REQUESTED;
-        debug_sell_amount_func = debug_sell_amount_REQUESTED;
         //Start program
-        logical_account la("test");
-        la.sell_stock("MSFT", 10);
+        logical_account la("test", false);
         uint32_t sold_stock = la.held_stock("MSFT");
         double account_cash = la.available_cash();
+        THROW_IF_FALSE(sold_stock == 10, sold_stock);
+        THROW_IF_FALSE(account_cash == 0, account_cash);
+        la.sell_stock("MSFT", 10);
+        sold_stock = la.held_stock("MSFT");
+        account_cash = la.available_cash();
         THROW_IF_FALSE(sold_stock == 0, sold_stock);
         THROW_IF_FALSE(account_cash == 100, account_cash);
     )
@@ -113,18 +111,18 @@ bool basic_sell_ten() {
 bool basic_async_sell_ten() {
     UNIT_TEST_TRY_WRAPPER(
         //Set globals and defaults
-        debug_amount_owned_SET_NATURAL_CHANGING(true);
-        debug_account_cash_SET_NATURAL_CHANGING(true);
         debug_account_cash_SET_GLOBAL(0);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
         debug_amount_owned_SET_GLOBAL("MSFT", 10);
         debug_purchase_amount_func = debug_purchase_amount_REQUESTED;
         debug_sell_amount_func = debug_sell_amount_REQUESTED;
         //Start program
-        logical_account la("test");
+        logical_account la("test", false);
+        uint32_t sold_stock = la.held_stock("MSFT");
+        THROW_IF_FALSE(sold_stock == 10, sold_stock);
         auto key = la.async_sell_stock("MSFT", 10);
         key.wait();
-        uint32_t sold_stock = la.held_stock("MSFT");
+        sold_stock = la.held_stock("MSFT");
         double account_cash = la.available_cash();
         THROW_IF_FALSE(sold_stock == 0, sold_stock);
         THROW_IF_FALSE(sold_stock == key.get(), key.get());

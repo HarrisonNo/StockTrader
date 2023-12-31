@@ -61,7 +61,7 @@ class logical_ticker {
         void _load_historical_price_file(int month = INT_MAX, int year = INT_MAX);//Corrects monthly held prices
 
     public:
-        logical_ticker(std::string input_ticker, bool allow_boot_loading = true);
+        logical_ticker(std::string input_ticker, logical_account * tied_account, bool allow_boot_loading = true);
         ~logical_ticker();
 
         inline std::string ticker();
