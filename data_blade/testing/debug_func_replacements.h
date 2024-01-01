@@ -15,7 +15,14 @@
 #define RESET_ALL_GLOBAL_VALUES \
     debug_amount_owned_RESET_GLOBAL(); \
     debug_stock_price_RESET_GLOBAL(); \
-    debug_account_cash_RESET_GLOBAL();
+    debug_account_cash_RESET_GLOBAL(); \
+    debug_amount_owned_func = debug_amount_owned_GLOBAL; \
+    debug_stock_price_func = debug_stock_price_GLOBAL; \
+    debug_account_cash_func = debug_account_cash_GLOBAL; \
+    debug_purchase_amount_func = debug_purchase_amount_REQUESTED; \
+    debug_sell_amount_func = debug_sell_amount_REQUESTED; \
+    debug_amount_owned_SET_NATURAL_CHANGING(true); \
+    debug_account_cash_SET_NATURAL_CHANGING(true);
 
 
 void debug_amount_owned_SET_GLOBAL(std::string ticker, uint32_t set_amount);
