@@ -72,7 +72,7 @@ Description: returns amount owned, minimizing wrapper calls if we already checke
 Assumptions:
 */
 uint32_t logical_ticker::amount_owned(bool force_check/* = false*/) {
-    time_t current_time = time(NULL);
+    time_t current_time = CURRENT_TIME();
     uint_fast32_t discrepancy, returned_amount_owned;
 
     //If:
@@ -116,7 +116,7 @@ Description: gets the stock price, minimizing wrapper calls if we already checke
 Assumptions:
 */
 double logical_ticker::stock_price(bool force_check/* = false*/) {
-    time_t current_time = time(NULL);
+    time_t current_time = CURRENT_TIME();
 
     if (!force_check && (current_time - _time_last_checked_price) < MAX_STOCK_PRICE_TIMEOUT) {
         return _stock_price;

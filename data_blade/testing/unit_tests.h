@@ -8,7 +8,7 @@ bool basic_class_creation();
 bool basic_heap_class_creation();
 bool basic_purchase_ten();
 bool basic_async_purchase_ten();
-bool basic_purchas_extra();
+bool basic_purchase_extra();
 bool basic_sell_ten();
 bool basic_async_sell_ten();
 bool basic_sell_extra();
@@ -21,7 +21,7 @@ bool basic_sell_extra();
     basic_async_purchase_ten(); \
     basic_sell_ten(); \
     basic_async_sell_ten(); \
-    basic_purchas_extra(); \
+    basic_purchase_extra(); \
     basic_sell_extra();
 
 
@@ -31,13 +31,19 @@ bool basic_sell_extra();
 //Calls buy/sell multiple times alongside one new feature
 bool intermediate_buy_sell_one_stock();
 bool intermediate_buy_sell_two_stock();
-
-
+bool intermediate_sell_fully_unprofitable();
+bool intermediate_sell_partially_unprofitable();
+bool intermediate_force_sell_fully_unprofitable();
+bool intermediate_load_saved_transactions();
 
 
 #define RUN_ALL_INTERMEDIATE_TESTS \
     intermediate_buy_sell_one_stock(); \
-    intermediate_buy_sell_two_stock();
+    intermediate_buy_sell_two_stock(); \
+    intermediate_sell_fully_unprofitable(); \
+    intermediate_sell_partially_unprofitable(); \
+    intermediate_force_sell_fully_unprofitable(); \
+    intermediate_load_saved_transactions();
 
 
 

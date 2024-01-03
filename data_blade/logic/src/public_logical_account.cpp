@@ -18,6 +18,7 @@ logical_account::logical_account(std::string account_name/* = "PLACEHOLDER"*/, b
     _number_of_projections = 0;
     _time_last_checked_cash = 0;
     _account_name = account_name;
+    _known_cash_amount = 0;
     check_and_create_dirs(SAVED_ACCOUNT_DIR(account_name));
     if (!load_existing) {
         //Purge any and all existing files which may have been previously created
@@ -91,7 +92,7 @@ uint32_t logical_account::buy_stock(std::string ticker, uint32_t amount) {
         return 0;
     }
 
-    stock_price = lt->stock_price();
+    stock_price = lt->stock_price(true);
     total_projected_cost = amount * stock_price;
 
     if (total_projected_cost > _projected_cash) {
@@ -165,7 +166,7 @@ uint32_t logical_account::sell_stock(std::string ticker, uint32_t amount, bool f
         return 0;
     }
     
-    stock_price = lt->stock_price();
+    stock_price = lt->stock_price(true);
     total_projected_profit = amount * stock_price;
 
     _cash_lock.lock();
@@ -206,7 +207,7 @@ Description:
 Assumptions:
 */
 double logical_account::available_cash(bool force_check/* = false*/) {
-    time_t current_time = time(NULL);
+    time_t current_time = CURRENT_TIME();
     double internal_cash;
 
     if (_known_cash_amount && !force_check && ((current_time - _time_last_checked_cash) < MAX_KNOWN_SEC_TIMEOUT)) {

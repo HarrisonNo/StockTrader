@@ -147,7 +147,7 @@ void logical_ticker::_save_stock_price_at_time(double stock_price, time_t curren
     std::streampos file_position;
 
     if (current_time == 0) {
-        time(&current_time);
+        current_time = CURRENT_TIME();
     }
 
     time_info = localtime(&current_time);
@@ -190,7 +190,7 @@ Assumptions:
 void logical_ticker::_load_historical_price_file(int month/* = INT_MAX*/, int year/* = INT_MAX*/) {
     std::fstream historical_price_file;
     double temp_price;
-    time_t temp_time, current_time = time(NULL);
+    time_t temp_time, current_time = CURRENT_TIME();
     struct tm * time_info = localtime(&current_time);
 
     if (month == INT_MAX) {

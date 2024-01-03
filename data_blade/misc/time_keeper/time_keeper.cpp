@@ -1,5 +1,5 @@
 #include "time_keeper.h"
-
+#include "api.h"
 
 #define TM_YEAR(T) T->tm_year
 #define TM_MONTH(T) T->tm_mon
@@ -11,7 +11,7 @@
 
 
 time_keeper::time_keeper() {
-    secs_since_1970 = time(NULL);
+    secs_since_1970 = CURRENT_TIME();
     timeinfo = localtime(&secs_since_1970);
 }
 

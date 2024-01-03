@@ -9,3 +9,5 @@ std::function<double(std::string)> debug_stock_price_func = debug_stock_price_GL
 std::function<double()> debug_account_cash_func = debug_account_cash_GLOBAL;
 std::function<uint32_t(std::string, uint32_t)> debug_purchase_amount_func = debug_purchase_amount_REQUESTED;
 std::function<uint32_t(std::string, uint32_t)> debug_sell_amount_func = debug_sell_amount_REQUESTED;
+std::function<time_t()> debug_current_time_func = debug_current_time_GLOBAL;
+std::function<void(time_t)> debug_sleep_for_func = debug_sleep_for_FAKE;
