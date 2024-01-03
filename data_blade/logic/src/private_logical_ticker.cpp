@@ -152,7 +152,7 @@ void logical_ticker::_save_stock_price_at_time(double stock_price, time_t curren
 
     time_info = localtime(&current_time);
     check_and_create_dirs(HISTORICAL_TICKER_YEAR_DIR(_ticker, std::to_string(time_info->tm_year)));
-    historical_price_file.open(HISTORICAL_TICKER_MONTH_FILE(_ticker, std::to_string(time_info->tm_year), std::to_string(time_info->tm_mon)), std::ios::in | std::ios::out);
+    historical_price_file.open(HISTORICAL_TICKER_MONTH_FILE(_ticker, std::to_string(time_info->tm_year), std::to_string(time_info->tm_mon)), std::ios::in | std::ios::out);//THIS ISN'T WORKING LMAO, succesfully created dir with year 123 but didn't create month file
     file_position = historical_price_file.tellg();//Stores postion of file at start, updated at end of every while loop
 
     if (time_info->tm_year == _loaded_year && time_info->tm_mon == _loaded_month) {

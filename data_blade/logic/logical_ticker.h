@@ -50,7 +50,7 @@ class logical_ticker {
         //Ordered from low price -> high price
         std::list<list_insert*> _transactions;
         //Stores historical prices
-        std::vector<std::pair<time_t, double>> _historical_prices_month_file;
+        std::vector<std::pair<time_t, double>> _historical_prices_month_file;//THIS NEEDS TO BE FIXED IF WE LOAD 2 PRICES AT THE EXACT SAME TIME
         //Stores historical prices within specified range
         std::vector<std::pair<time_t, double>> _historical_prices_ranged;
 

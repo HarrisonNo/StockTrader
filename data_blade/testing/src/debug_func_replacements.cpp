@@ -14,6 +14,7 @@ double debug_account_cash_GLOBAL_var = DEFAULT_ACCOUNT_CASH_AMOUNT;
 bool debug_account_cash_NATURAL_CHANGING = true;
 time_t debug_current_time_GLOBAL_var = DEFAULT_CURRENT_TIME;
 time_t debug_current_time_ADDED_GLOBAL_var = 0;
+bool debug_current_time_NATURAL_CHANGING = true;
 
 //So far five types of debug funcs
 //uint32_t debug_amount_owned_func(std::string)
@@ -130,7 +131,10 @@ uint32_t debug_sell_amount_REQUESTED(std::string ticker, uint32_t requested_amou
 
 //CURRENT TIME
 time_t debug_current_time_GLOBAL() {
-    return debug_current_time_GLOBAL_var + (time(NULL) - debug_current_time_ADDED_GLOBAL_var);
+    if (debug_current_time_NATURAL_CHANGING) {
+        return debug_current_time_GLOBAL_var + (time(NULL) - debug_current_time_ADDED_GLOBAL_var);
+    }
+    return debug_current_time_GLOBAL_var;
 }
 
 void debug_current_time_SET_GLOBAL(time_t set_time) {
@@ -146,6 +150,13 @@ void debug_current_time_RESET_ADDED_GLOBAL() {
     debug_current_time_ADDED_GLOBAL_var = time(NULL);
 }
 
+void debug_current_time_SET_NATURAL_CHANGING(bool enable_changing) {
+    debug_current_time_NATURAL_CHANGING = enable_changing;
+}
+
+time_t debug_current_time_REAL() {
+    return time(NULL);
+}
 
 
 //SLEEP FOR

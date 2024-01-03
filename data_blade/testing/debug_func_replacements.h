@@ -27,28 +27,35 @@
     debug_account_cash_SET_NATURAL_CHANGING(true); \
     debug_current_time_RESET_GLOBAL(); \
     debug_current_time_func = debug_current_time_GLOBAL; \
-    debug_sleep_for_func = debug_sleep_for_FAKE;
+    debug_sleep_for_func = debug_sleep_for_FAKE; \
+    debug_current_time_SET_NATURAL_CHANGING(true);
 
 //amount_owned
+//Return set global val
+uint32_t debug_amount_owned_GLOBAL(std::string ticker);
 void debug_amount_owned_SET_GLOBAL(std::string ticker, uint32_t set_amount);
 void debug_amount_owned_SET_NATURAL_CHANGING(bool enable_changing);
 void debug_amount_owned_RESET_GLOBAL();
-uint32_t debug_amount_owned_GLOBAL(std::string ticker);
+//Make a cout call to the user to enter a specified number
 uint32_t debug_amount_owned_USER(std::string ticker);
 
 
 //stock_price
+//Return set global val
+double debug_stock_price_GLOBAL(std::string ticker);
 void debug_stock_price_SET_GLOBAL(std::string ticker, double set_price);
 void debug_stock_price_RESET_GLOBAL();
-double debug_stock_price_GLOBAL(std::string ticker);
+//Make a cout call to the user to enter a specified number
 double debug_stock_price_USER(std::string ticker);
 
 
 //account_cash
+//Return set global val
+double debug_account_cash_GLOBAL();
 void debug_account_cash_SET_GLOBAL(double set_cash);
 void debug_account_cash_SET_NATURAL_CHANGING(bool enable_changing);
 void debug_account_cash_RESET_GLOBAL();
-double debug_account_cash_GLOBAL();
+//Make a cout call to the user to enter a specified number
 double debug_account_cash_USER();
 
 
@@ -63,15 +70,20 @@ uint32_t debug_sell_amount_REQUESTED(std::string ticker, uint32_t requested_amou
 
 
 //current_time
+//Return set global val
 time_t debug_current_time_GLOBAL();
 void debug_current_time_SET_GLOBAL(time_t set_time);
 void debug_current_time_RESET_GLOBAL();
 void debug_current_time_RESET_ADDED_GLOBAL();
+void debug_current_time_SET_NATURAL_CHANGING(bool enable_changing);
+//Returns the real time(NULL) value unaltered
+time_t debug_current_time_REAL();
 
 
-//sleep for
+//sleep_for
+//Pretends to sleep for specified time and increments current_time_GLOBAL to reflect pretend time spent sleeping
 void debug_sleep_for_FAKE(time_t sleep_secs);
-
+//Sleep_till can be created solely in logical_account as it can simply call sleep_for
 
 
 
