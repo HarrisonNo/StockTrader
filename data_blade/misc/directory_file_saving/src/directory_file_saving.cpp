@@ -1,6 +1,8 @@
-#include "directory_file_saving.h"
 #include <filesystem>
 #include <iostream>
+#include <fstream>
+#include "directory_file_saving.h"
+
 /*
 https://en.cppreference.com/w/cpp/filesystem
 https://cplusplus.com/doc/tutorial/files/
@@ -35,4 +37,23 @@ bool check_and_create_dirs(std::string path) {
     }
 
     return true;
+}
+
+bool check_and_create_file(std::fstream * file_handle, std::ios_base::openmode flags, std::string file_path_string) {
+
+    if (!std::filesystem::exists(file_path_string)) {
+        flags |= std::ios::trunc;
+    }
+
+    file_handle->open(file_path_string, flags);
+
+    if (*file_handle) {
+        return true;
+    }
+
+    if (file_handle->is_open()) {
+        file_handle->close();
+    }
+
+    return false;
 }

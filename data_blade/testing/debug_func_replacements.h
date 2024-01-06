@@ -14,6 +14,8 @@
 //time_t debug_current_time()
 //void debug_sleep_for()//TODO
 
+
+//RESET_ALL_GLOBAL_VALUES is destructive, we have to ensure we are using DEBUG_API before we call this
 #define RESET_ALL_GLOBAL_VALUES \
     debug_amount_owned_RESET_GLOBAL(); \
     debug_stock_price_RESET_GLOBAL(); \
@@ -28,7 +30,9 @@
     debug_current_time_RESET_GLOBAL(); \
     debug_current_time_func = debug_current_time_GLOBAL; \
     debug_sleep_for_func = debug_sleep_for_FAKE; \
-    debug_current_time_SET_NATURAL_CHANGING(true);
+    debug_current_time_SET_NATURAL_CHANGING(true); \
+    std::filesystem::remove_all(SAVED_TICKER_DIR); \
+    std::filesystem::remove_all(SAVED_ACCOUNT_USERS_DIR);
 
 //amount_owned
 //Return set global val

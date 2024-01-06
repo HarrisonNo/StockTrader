@@ -1,15 +1,18 @@
 #include <iostream>
+#include <filesystem>
 #include "unit_tests.h"
 #include "logical_account.h"
 #include "api.h"
 #include "debug_func_replacements.h"
+#include "directory_file_saving.h"
 
 #define UNIT_TEST_TRY_WRAPPER(X) \
     std::string FailString; \
     bool ReturnVal = true; \
-    RESET_ALL_GLOBAL_VALUES \
     std::cout<<"Running unit test "<<__func__<<std::endl; \
+    if (DEBUG_API) {RESET_ALL_GLOBAL_VALUES} \
     try { \
+        if (!DEBUG_API) {throw "DEBUG_API is not enabled, unit tests with a broker api is currently unsupported\n";} \
         X \
     } \
     catch (std::string st) { \
@@ -307,6 +310,43 @@ bool intermediate_load_saved_transactions() {
         debug_stock_price_SET_GLOBAL("MSFT", 20);
         TEMPLATED_UNSAFE_SELL_STOCK("MSFT", newer_la, 10, true);//Should fully succeed
         delete(newer_la);
+    )
+}
+
+//Basic version of historical prices with only a couple seconds deviation
+bool intermediate_historical_prices_basic() {
+    UNIT_TEST_TRY_WRAPPER(//Start time at 69420
+        debug_stock_price_SET_GLOBAL("MSFT", 100);
+        debug_current_time_SET_NATURAL_CHANGING(false);
+        logical_account la("test", false);
+        la.stock_price("MSFT");//Save 100
+        debug_sleep_for_FAKE(2);//Pretend to sleep 2 secs, now 69422
+        debug_stock_price_SET_GLOBAL("MSFT", 150);
+        la.stock_price("MSFT");//Save 150
+        debug_sleep_for_FAKE(2);//Now 69424
+        debug_stock_price_SET_GLOBAL("MSFT", 200);
+        la.stock_price("MSFT");//Save 200
+        debug_sleep_for_FAKE(2);//Now 69426
+        debug_stock_price_SET_GLOBAL("MSFT", 50);
+        la.stock_price("MSFT");//Save 50
+        debug_sleep_for_FAKE(2);//Now 69428
+        debug_stock_price_SET_GLOBAL("MSFT", 500);
+        la.stock_price("MSFT");//Save 500
+        time_keeper tk_one; time_keeper tk_two;
+        tk_one.adjust_second(-6); tk_two.adjust_second(-2);
+        time_t min_time = tk_one.finalize();
+        time_t max_time = tk_two.finalize();
+        THROW_IF_FALSE(min_time == 69422, min_time);
+        THROW_IF_FALSE(max_time == 69426, max_time);
+        //type of std::vector<std::pair<time_t, double>>, but UNIT_TEST_TRY_WRAPPER macro hates the extra commas lmao. Fucken hate the limits of c++ macros
+        auto historical_prices = la.get_historical_price_in_range("MSFT", min_time, max_time);//Looking at prices from 69422 to 69426, should have {150, 200, 50}//THIS IS ALSO WRONG SOMEHOW, FINALIZE ISN'T RETURNING THE NUMBER I WANT
+        THROW_IF_FALSE(historical_prices->size() == 3, historical_prices->size());
+        THROW_IF_FALSE((*historical_prices)[0].first == 69422, (*historical_prices)[0].first);
+        THROW_IF_FALSE((*historical_prices)[0].second == 150, (*historical_prices)[0].second);
+        THROW_IF_FALSE((*historical_prices)[1].first == 69424, (*historical_prices)[1].first);
+        THROW_IF_FALSE((*historical_prices)[1].second == 200, (*historical_prices)[1].second);
+        THROW_IF_FALSE((*historical_prices)[2].first == 69426, (*historical_prices)[2].first);
+        THROW_IF_FALSE((*historical_prices)[2].second == 50, (*historical_prices)[2].second);
     )
 }
 

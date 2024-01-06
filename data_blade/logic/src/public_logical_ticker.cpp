@@ -132,7 +132,7 @@ double logical_ticker::stock_price(bool force_check/* = false*/) {
     }
 
     _time_last_checked_price = current_time;
-    _save_stock_price_at_time(current_time);
+    _save_stock_price_at_time(_stock_price, current_time);
 
     return _stock_price;
 }
@@ -276,20 +276,28 @@ Description: This could 100% be optimized by storing start and end times and sim
 Assumptions:
 */
 std::vector<std::pair<time_t, double>> * logical_ticker::load_historical_prices(time_t start_time, time_t end_time) {
-    struct tm * start_time_info = localtime(&start_time);
-    struct tm * end_time_info = localtime(&end_time);
+    time_t temp_time;
+    struct tm * start_temp_time_info = localtime(&start_time);
+    struct tm * end_temp_time_info = localtime(&end_time);
+    std::tm start_time_info = {};
+    std::tm end_time_info = {};
+    //We have to copy values as the pointer will never actually be adjusted by ++ or --
+    copy_pointer_into_struct(&start_temp_time_info, &start_time_info);
+    copy_pointer_into_struct(&end_temp_time_info, &end_time_info);
     _historical_prices_ranged.clear();
-    while (start_time_info->tm_year < end_time_info->tm_year || ((start_time_info->tm_mon <= end_time_info->tm_mon) && start_time_info->tm_year == end_time_info->tm_year)) {
-        _load_historical_price_file(start_time_info->tm_mon, start_time_info->tm_year);
-        for (std::pair<time_t, double> pr : _historical_prices_month_file) {
-            if (pr.first >= start_time && pr.first <= end_time) {
-                _historical_prices_ranged.push_back(pr);
-            }
+    while (start_time_info.tm_year < end_time_info.tm_year || ((start_time_info.tm_mon <= end_time_info.tm_mon) && start_time_info.tm_year == end_time_info.tm_year)) {
+        if (_load_historical_price_file(start_time_info.tm_mon, start_time_info.tm_year)) {
+            for (std::pair<time_t, double> pr : _historical_prices_month_file) {
+                if (pr.first >= start_time && pr.first <= end_time) {
+                    _historical_prices_ranged.push_back(pr);
+                }
+            }   
         }
         /* End */
-        start_time_info->tm_mon++;
-        time_t temp_time = mktime(start_time_info);
-        start_time_info = localtime(&temp_time);
+        start_time_info.tm_mon++;
+        temp_time = mktime(&start_time_info);
+        start_temp_time_info = localtime(&temp_time);
+        copy_pointer_into_struct(&start_temp_time_info, &start_time_info);
     }
     return &_historical_prices_ranged;
 }

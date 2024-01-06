@@ -35,6 +35,7 @@ bool intermediate_sell_fully_unprofitable();
 bool intermediate_sell_partially_unprofitable();
 bool intermediate_force_sell_fully_unprofitable();
 bool intermediate_load_saved_transactions();
+bool intermediate_historical_prices_basic();
 
 
 #define RUN_ALL_INTERMEDIATE_TESTS \
@@ -43,7 +44,8 @@ bool intermediate_load_saved_transactions();
     intermediate_sell_fully_unprofitable(); \
     intermediate_sell_partially_unprofitable(); \
     intermediate_force_sell_fully_unprofitable(); \
-    intermediate_load_saved_transactions();
+    intermediate_load_saved_transactions(); \
+    intermediate_historical_prices_basic();
 
 
 

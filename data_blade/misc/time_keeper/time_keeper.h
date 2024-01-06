@@ -1,24 +1,36 @@
-#include <time.h>
-
+#include <ctime>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 
 #ifndef TIME_KEEPER_H
 #define TIME_KEEPER_H
 
 
-#define TIME1(A) time_keeper * tk; tk->A; tk->finalize()
-#define TIME2(A, B) time_keeper * tk; tk->A; tk->B; tk->finalize()
-#define TIME3(A, B, C) time_keeper * tk; tk->A; tk->B; tk->C; tk->finalize()
-#define TIME4(A, B, C, D) time_keeper * tk; tk->A; tk->B; tk->C; tk->D; tk->finalize()
-#define TIME5(A, B, C, D, E) time_keeper * tk; tk->A; tk->B; tk->C; tk->D; tk->E; tk->finalize()
-#define TIME6(A, B, C, D, E, F) time_keeper * tk; tk->A; tk->B; tk->C; tk->D; tk->E; tk->F; tk->finalize()
+enum operation{
+    adjust_year,
+    adjust_month,
+    adjust_day,
+    adjust_hour,
+    adjust_minute,
+    adjust_second,
+    set_year,
+    set_month,
+    set_day,
+    set_hour,
+    set_minute,
+    set_second
+};
 
+//Non class functions
+void copy_pointer_into_struct(std::tm **temp_ptr, std::tm *real_val);
 
 
 class time_keeper {
     private:
     //Variables
     time_t secs_since_1970;
-    struct tm * timeinfo;
+    std::tm timeinfo;
 
     public:
     //Functions

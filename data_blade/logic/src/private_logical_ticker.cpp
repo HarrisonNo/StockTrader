@@ -142,40 +142,24 @@ Assumptions:
 void logical_ticker::_save_stock_price_at_time(double stock_price, time_t current_time/* = 0*/) {
     struct tm * time_info;
     std::fstream historical_price_file;
-    time_t temp_time;
-    double temp_price;
-    std::streampos file_position;
 
     if (current_time == 0) {
         current_time = CURRENT_TIME();
     }
 
     time_info = localtime(&current_time);
-    check_and_create_dirs(HISTORICAL_TICKER_YEAR_DIR(_ticker, std::to_string(time_info->tm_year)));
-    historical_price_file.open(HISTORICAL_TICKER_MONTH_FILE(_ticker, std::to_string(time_info->tm_year), std::to_string(time_info->tm_mon)), std::ios::in | std::ios::out);//THIS ISN'T WORKING LMAO, succesfully created dir with year 123 but didn't create month file
-    file_position = historical_price_file.tellg();//Stores postion of file at start, updated at end of every while loop
-
-    if (time_info->tm_year == _loaded_year && time_info->tm_mon == _loaded_month) {
-        std::pair<time_t, double> new_pair = std::make_pair(current_time, stock_price);
-        //This is absolutely cursed, insert into the vector ordered, with O(logN)
-        _historical_prices_month_file.insert(std::upper_bound(_historical_prices_month_file.begin(), _historical_prices_month_file.end(), new_pair), new_pair);
+    //Load the vector
+    if (!_load_historical_price_file(time_info->tm_mon, time_info->tm_year)) {
+        return;
     }
-
-    //This breaks once we have gone right past where we want to insert
-    //Insert after while loops finishes
-    while (historical_price_file >> temp_time >> temp_price) {
-        if (temp_time < current_time) {
-            goto continue_while;
-        }
-        if (temp_time > current_time) {
-            break;
-        }
-        continue_while:
-        file_position = historical_price_file.tellg();
+    std::pair<time_t, double> new_pair = std::make_pair(current_time, stock_price);
+    //This is absolutely cursed, insert into the vector ordered, with O(logN)
+    _historical_prices_month_file.insert(std::upper_bound(_historical_prices_month_file.begin(), _historical_prices_month_file.end(), new_pair), new_pair);
+    //Open month file with trunc to delete existing contents
+    check_and_create_file(&historical_price_file, std::ios::in | std::ios::out | std::ios::trunc, HISTORICAL_TICKER_MONTH_FILE(_ticker, std::to_string(time_info->tm_year), std::to_string(time_info->tm_mon)));
+    for (std::pair<time_t, double> pr : _historical_prices_month_file) {
+        historical_price_file << pr.first << "\t" <<pr.second<< "\n";
     }
-    historical_price_file.seekg(file_position);
-    //Save to file at specified position
-    historical_price_file << current_time << "\t" << stock_price << "\n";
     historical_price_file.close();
     return;
 }
@@ -187,7 +171,7 @@ Output:
 Description:
 Assumptions:
 */
-void logical_ticker::_load_historical_price_file(int month/* = INT_MAX*/, int year/* = INT_MAX*/) {
+bool logical_ticker::_load_historical_price_file(int month/* = INT_MAX*/, int year/* = INT_MAX*/) {
     std::fstream historical_price_file;
     double temp_price;
     time_t temp_time, current_time = CURRENT_TIME();
@@ -201,20 +185,24 @@ void logical_ticker::_load_historical_price_file(int month/* = INT_MAX*/, int ye
     }
     
     if (_loaded_year == year && _loaded_month == month) {
-        return;//No need to load anything
+        return true;//No need to load anything
+    }
+
+    //Read in specific file
+    
+    if (!check_and_create_dirs(HISTORICAL_TICKER_YEAR_DIR(_ticker, std::to_string(year))) ||
+        !check_and_create_file(&historical_price_file, std::ios::in | std::ios::out, HISTORICAL_TICKER_MONTH_FILE(_ticker, std::to_string(year), std::to_string(month)))) {
+        return false;
     }
 
     _loaded_year = year;
     _loaded_month = month;
     _historical_prices_month_file.clear();
 
-    //Read in specific file
-    check_and_create_dirs(HISTORICAL_TICKER_YEAR_DIR(_ticker, std::to_string(year)));
-    historical_price_file.open(HISTORICAL_TICKER_MONTH_FILE(_ticker, std::to_string(year), std::to_string(month)), std::ios::in | std::ios::out);
-    while(historical_price_file >> temp_time >> temp_time) {
+    while(historical_price_file >> temp_time >> temp_price) {
         _historical_prices_month_file.emplace_back(temp_time, temp_price);
     }
 
     historical_price_file.close();
-    return ;
+    return true;
 }

@@ -20,16 +20,15 @@
 
 #define HISTORICAL_TICKER_DIR(ticker)                       SAVED_TICKER_DIR + ticker + "/"
 #define HISTORICAL_TICKER_YEAR_DIR(ticker, year)            HISTORICAL_TICKER_DIR(ticker) + year + "/"
-#define HISTORICAL_TICKER_MONTH_FILE(ticker, year, month)   HISTORICAL_TICKER_YEAR_DIR(ticker, year) + month
+#define HISTORICAL_TICKER_MONTH_FILE(ticker, year, month)   HISTORICAL_TICKER_YEAR_DIR(ticker, year) + month +".txt"
 
 #define SAVED_ACCOUNT_DIR(account)                          SAVED_ACCOUNT_USERS_DIR + account + "/"
 #define SAVED_ACCOUNT_TICKER_DIR(account, ticker)           SAVED_ACCOUNT_DIR(account) + ticker + "/"
-#define SAVED_ACCOUNT_TRANSACTIONS_FILE(account, ticker)    SAVED_ACCOUNT_TICKER_DIR(account, ticker) + "transactions_file"
+#define SAVED_ACCOUNT_TRANSACTIONS_FILE(account, ticker)    SAVED_ACCOUNT_TICKER_DIR(account, ticker) + "transactions_file.txt"
 
 
 bool check_and_create_dirs(std::string path);
-
-
+bool check_and_create_file(std::fstream * file_handle, std::ios_base::openmode flags, std::string file_path_string);
 
 
 

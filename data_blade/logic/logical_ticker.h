@@ -58,7 +58,7 @@ class logical_ticker {
         inline list_insert * _create_list_node(uint32_t amount, double price) {return new list_insert(amount, price);}
         inline void _delete_list_node(list_insert *node) {delete(node);}
 
-        void _load_historical_price_file(int month = INT_MAX, int year = INT_MAX);//Corrects monthly held prices
+        bool _load_historical_price_file(int month = INT_MAX, int year = INT_MAX);//Corrects monthly held prices
 
     public:
         logical_ticker(std::string input_ticker, logical_account * tied_account, bool allow_boot_loading = true);
