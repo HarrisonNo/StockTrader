@@ -204,7 +204,7 @@ inline void TEMPLATED_UNSAFE_SELL_STOCK(std::string ticker, logical_account * ac
 }
 
 
-bool intermediate_buy_sell_one_stock() {
+bool intermediate_repeated_buy_sell_one_basic() {
     UNIT_TEST_TRY_WRAPPER(
         debug_account_cash_SET_GLOBAL(100);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
@@ -220,7 +220,7 @@ bool intermediate_buy_sell_one_stock() {
     )
 }
 
-bool intermediate_buy_sell_two_stock() {
+bool intermediate_repeated_buy_sell_two_basic() {
     UNIT_TEST_TRY_WRAPPER(
         debug_account_cash_SET_GLOBAL(200);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
@@ -290,6 +290,36 @@ bool intermediate_force_sell_fully_unprofitable() {
         THROW_IF_FALSE(account_cash == 0, account_cash);
         THROW_IF_FALSE(stock_held == 10, stock_held);
         TEMPLATED_UNSAFE_SELL_STOCK("MSFT", &la, 10, true);//Should fully succeed
+    )
+}
+
+
+inline void TEMPLATED_SAFE_BUY_STOCK(std::string ticker, logical_account * account, uint32_t to_buy_amount) {//TODO
+    uint32_t intial_held_stock = account->held_stock(ticker);
+    double intial_cash_amount = account->available_cash();
+    double initial_stock_price = account->stock_price(ticker, true);//Have to force it to call the api since we change the price so rapidly lmao
+    account->buy_stock(ticker, to_buy_amount);
+    uint32_t final_stock_amount = account->held_stock(ticker);
+    double final_cash_amount = account->available_cash();
+    THROW_IF_FALSE_THREE(final_stock_amount == (intial_held_stock + to_buy_amount), final_stock_amount, intial_held_stock, to_buy_amount);
+    THROW_IF_FALSE_FOUR(final_cash_amount == (intial_cash_amount - (initial_stock_price * to_buy_amount)), final_cash_amount, intial_cash_amount, initial_stock_price, to_buy_amount);
+}
+
+
+bool intermediate_repeated_buy_sell_one_advanced() {//TODO, does limited number checking
+    UNIT_TEST_TRY_WRAPPER(
+        //IMPLEMENTATION OF RNG
+        //For number of itertions
+        debug_account_cash_SET_GLOBAL(5000);
+        debug_stock_price_SET_GLOBAL("MSFT", 250);
+        debug_ADJUST_RNG(/*8123*/ 78567482);
+        for (int i = 0; i < 100; i++) {
+            double new_price = debug_PRICE_RNG_generate_new_price("MSFT", 4, 3,
+                                                                    .76, 2.4,
+                                                                    .8, 1.8);
+            std::cout<<"GENERATED NEW_PRICE OF:"<<new_price<<std::endl;//todo rest
+            debug_ADJUST_RNG(1);
+        }
     )
 }
 

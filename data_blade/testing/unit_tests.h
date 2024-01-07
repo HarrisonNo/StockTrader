@@ -29,23 +29,25 @@ bool basic_sell_extra();
 
 //INTERMEDIATE
 //Calls buy/sell multiple times alongside one new feature
-bool intermediate_buy_sell_one_stock();
-bool intermediate_buy_sell_two_stock();
+bool intermediate_repeated_buy_sell_one_basic();
+bool intermediate_repeated_buy_sell_two_basic();
 bool intermediate_sell_fully_unprofitable();
 bool intermediate_sell_partially_unprofitable();
 bool intermediate_force_sell_fully_unprofitable();
 bool intermediate_load_saved_transactions();
 bool intermediate_historical_prices_basic();
+bool intermediate_repeated_buy_sell_one_advanced();
 
 
 #define RUN_ALL_INTERMEDIATE_TESTS \
-    intermediate_buy_sell_one_stock(); \
-    intermediate_buy_sell_two_stock(); \
+    intermediate_repeated_buy_sell_one_basic(); \
+    intermediate_repeated_buy_sell_two_basic(); \
     intermediate_sell_fully_unprofitable(); \
     intermediate_sell_partially_unprofitable(); \
     intermediate_force_sell_fully_unprofitable(); \
     intermediate_load_saved_transactions(); \
-    intermediate_historical_prices_basic();
+    intermediate_historical_prices_basic(); \
+    intermediate_repeated_buy_sell_one_advanced();
 
 
 

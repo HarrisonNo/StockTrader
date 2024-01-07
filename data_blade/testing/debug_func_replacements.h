@@ -32,7 +32,8 @@
     debug_sleep_for_func = debug_sleep_for_FAKE; \
     debug_current_time_SET_NATURAL_CHANGING(true); \
     std::filesystem::remove_all(SAVED_TICKER_DIR); \
-    std::filesystem::remove_all(SAVED_ACCOUNT_USERS_DIR);
+    std::filesystem::remove_all(SAVED_ACCOUNT_USERS_DIR); \
+    debug_RESET_RNG();
 
 //amount_owned
 //Return set global val
@@ -82,6 +83,21 @@ void debug_current_time_RESET_ADDED_GLOBAL();
 void debug_current_time_SET_NATURAL_CHANGING(bool enable_changing);
 //Returns the real time(NULL) value unaltered
 time_t debug_current_time_REAL();
+
+
+
+//RNG
+uint64_t debug_RNG();
+void debug_ADJUST_RNG(uint64_t addition);
+void debug_RESET_RNG();
+uint64_t debug_RNG_GENERATE(uint64_t max);
+bool debug_RNG_GENERATE_ODDS(uint32_t positive_coefficient, uint32_t negative_cofficient);
+
+
+//PRICE RNG
+double debug_PRICE_RNG_generate_new_price(std::string ticker, uint32_t positive_coefficient, uint32_t negative_cofficient, 
+                                          double average_pos_percent_change, double max_pos_percent_change,
+                                          double average_neg_percent_change, double max_neg_percent_change);
 
 
 //sleep_for
