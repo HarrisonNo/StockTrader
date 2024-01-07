@@ -178,7 +178,7 @@ uint64_t debug_RNG() {
 }
 
 void debug_ADJUST_RNG(uint64_t addition) {
-    if ((UINT64_MAX - addition) <= debug_rng_var) {//Addition would push us over the edge
+    if ((UINT64_MAX - debug_rng_var) <= addition) {//Addition would push us over the edge
         debug_RESET_RNG();
         debug_rng_var += 1;
     }
