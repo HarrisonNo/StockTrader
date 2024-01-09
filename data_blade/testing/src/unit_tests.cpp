@@ -293,16 +293,67 @@ bool intermediate_force_sell_fully_unprofitable() {
     )
 }
 
+inline void VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(std::string ticker, logical_account * account) {
+    uint32_t la_held_stock = account->held_stock(ticker);
+    uint32_t held_stock = debug_amount_owned_GLOBAL(ticker);
+    THROW_IF_FALSE_TWO(la_held_stock == held_stock, la_held_stock, held_stock);
 
-inline void TEMPLATED_SAFE_BUY_STOCK(std::string ticker, logical_account * account, uint32_t to_buy_amount) {//TODO
-    uint32_t intial_held_stock = account->held_stock(ticker);
-    double intial_cash_amount = account->available_cash();
-    double initial_stock_price = account->stock_price(ticker, true);//Have to force it to call the api since we change the price so rapidly lmao
-    account->buy_stock(ticker, to_buy_amount);
-    uint32_t final_stock_amount = account->held_stock(ticker);
-    double final_cash_amount = account->available_cash();
-    THROW_IF_FALSE_THREE(final_stock_amount == (intial_held_stock + to_buy_amount), final_stock_amount, intial_held_stock, to_buy_amount);
-    THROW_IF_FALSE_FOUR(final_cash_amount == (intial_cash_amount - (initial_stock_price * to_buy_amount)), final_cash_amount, intial_cash_amount, initial_stock_price, to_buy_amount);
+    double la_cash_amount = account->available_cash();
+    double cash_amount = debug_account_cash_GLOBAL();
+    THROW_IF_FALSE_TWO(la_cash_amount == cash_amount, la_cash_amount, cash_amount);
+
+    double la_stock_price = account->stock_price(ticker);
+    double stock_price = debug_stock_price_GLOBAL(ticker);
+    THROW_IF_FALSE_TWO(la_stock_price == stock_price, la_stock_price, stock_price);
+}
+
+inline void TEMPLATED_SAFE_BUY_STOCK(std::string ticker, logical_account * account, uint32_t to_buy_amount) {
+//Rule of thumb: OG variables must only be used for THROW_IF_FALSE, no actual calculations should be done
+    VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(ticker, account);
+    double og_cash = debug_account_cash_GLOBAL();
+    double og_price = debug_stock_price_GLOBAL(ticker);
+    double full_price = og_price * to_buy_amount;
+    uint32_t expected_bought_amount;
+
+    if (full_price > og_cash) {
+        expected_bought_amount = og_cash / og_price;
+    } else {
+        expected_bought_amount = to_buy_amount;
+    }
+
+    uint32_t amount_actually_bought = account->buy_stock(ticker, to_buy_amount);
+
+    THROW_IF_FALSE_TWO(expected_bought_amount == amount_actually_bought, expected_bought_amount, amount_actually_bought);
+
+    VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(ticker, account);
+}
+
+//Catches selling for a loss
+inline void TEMPLATED_SAFE_SELL_STOCK(std::string ticker, logical_account * account, uint32_t to_sell_amount, bool force_sell = false) {
+    uint32_t og_amount_owned = debug_amount_owned_GLOBAL(ticker);
+    uint32_t expected_sell_amount;
+
+    VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(ticker, account);
+
+    if (to_sell_amount > og_amount_owned) {
+        expected_sell_amount = og_amount_owned;
+    } else {
+        expected_sell_amount = to_sell_amount;
+    }
+
+    if (!force_sell) {
+        uint32_t profitable_sellable = debug_historical_price_PROFITABLE_GLOBAL(ticker, debug_stock_price_GLOBAL(ticker));
+
+        if (expected_sell_amount > profitable_sellable) {
+            expected_sell_amount = profitable_sellable;
+        }
+    }
+
+    uint32_t amount_actually_sold = account->sell_stock(ticker, to_sell_amount, force_sell);
+
+    THROW_IF_FALSE_TWO(expected_sell_amount == amount_actually_sold, expected_sell_amount, amount_actually_sold);
+
+    VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(ticker, account);
 }
 
 
@@ -310,15 +361,39 @@ bool intermediate_repeated_buy_sell_one_advanced() {//TODO, does limited number 
     UNIT_TEST_TRY_WRAPPER(
         //IMPLEMENTATION OF RNG
         //For number of itertions
+        std::string ticker = "MSFT";
+
         debug_account_cash_SET_GLOBAL(5000);
-        debug_stock_price_SET_GLOBAL("MSFT", 250);
-        debug_ADJUST_RNG(/*8123*/ 78567482);
+        debug_stock_price_SET_GLOBAL(ticker, 250);
+        debug_ADJUST_RNG(78567482);
+
+        logical_account la("test", false);
+        VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(ticker, &la);
         for (int i = 0; i < 100; i++) {
+            /* HAVE MULTIPLE VERSIONS OF THIS UNIT TEST WITH VARYING BALANCES
             double new_price = debug_PRICE_RNG_generate_new_price("MSFT", 4, 3,
                                                                     .76, 2.4,
-                                                                    .8, 1.8);
-            std::cout<<"GENERATED NEW_PRICE OF:"<<new_price<<std::endl;//todo rest
+                                                                    .8, 1.8); */
+            double og_stock_price = la.stock_price(ticker);
+            debug_stock_price_SET_GLOBAL(ticker, debug_PRICE_RNG_generate_new_price(ticker, 1, 1,
+                                                                                    .8, 2.5,
+                                                                                    .75, 2));
+            double new_stock_price = la.stock_price(ticker);//calling SET_GLOBAL now auto pushes back the time 1 second, should no longer need to force an api check
+            if (og_stock_price < new_stock_price) {
+                //If the price is increasing
+                std::cout<<"BUYING"<<std::endl;
+                TEMPLATED_SAFE_SELL_STOCK(ticker, &la, 1000);//Sell all of ours, should get a good fix of full fail, partial fail
+
+            } else if (og_stock_price > new_stock_price) {
+                //If the price is decreasing
+                std::cout<<"SELLING"<<std::endl;
+                TEMPLATED_SAFE_BUY_STOCK(ticker, &la, 1000);//Buy as many as we can
+            }
+            //We decided what we want to do by now, buy, sell, or do nothing
+            VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(ticker, &la);//SHOULD WE BE DOING ANYTHING ELSE?
+
             debug_ADJUST_RNG(1);
+            debug_current_time_SET_GLOBAL(debug_current_time_GLOBAL() + DAY_TO_SEC(1));
         }
     )
 }
@@ -347,7 +422,7 @@ bool intermediate_load_saved_transactions() {
 bool intermediate_historical_prices_basic() {
     UNIT_TEST_TRY_WRAPPER(//Start time at 69420
         debug_stock_price_SET_GLOBAL("MSFT", 100);
-        debug_current_time_SET_NATURAL_CHANGING(false);
+        debug_current_time_SET_NATURAL_CHANGING_GLOBAL(false);
         logical_account la("test", false);
         la.stock_price("MSFT");//Save 100
         debug_sleep_for_FAKE(2);//Pretend to sleep 2 secs, now 69422
@@ -381,3 +456,7 @@ bool intermediate_historical_prices_basic() {
 }
 
 //ADD UNIT TESTS FOR TICKER PRICE HISTORY
+
+
+
+//ADD UNIT TEST FOR A STALLED ASYNC ALONGSIDE INLINE EXEC

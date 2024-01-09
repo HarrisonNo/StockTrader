@@ -5,8 +5,6 @@
 #include "directory_file_saving.h"
 #include "logical_ticker.h"
 
-#define DOUBLE_CHECK_TRANSACTION_SLEEP 15 //Number of seconds we sleep before double checking to make sure a transaction 100% completed
-
 
 /*
 Input:

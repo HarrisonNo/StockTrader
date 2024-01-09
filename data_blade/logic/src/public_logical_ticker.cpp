@@ -6,7 +6,7 @@
 #include "directory_file_saving.h"
 
 
-#define MAX_STOCK_PRICE_TIMEOUT 2 //Number of seconds we can use our stored stock price for a ticker before needing to check it again
+#define MAX_STOCK_PRICE_TIMEOUT 1 //Number of seconds we can use our stored stock price for a ticker before needing to check it again
 #define MAX_KNOWN_SEC_TIMEOUT 21600 //Max number of seconds we can use our stored known amount before double checking (6 hours)
 #define MIN_KNOWN_SEC_TIMEOUT 60 //Min number of seconds we have to double check before we can use our stored known amount
 

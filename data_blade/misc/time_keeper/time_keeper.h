@@ -7,6 +7,12 @@
 #define TIME_KEEPER_H
 
 
+//LOOSE CALCULATIONS, SHOULD NOT BE WIDELY USED
+#define MIN_TO_SEC(min) min * 60
+#define HOUR_TO_SEC(hour) MIN_TO_SEC(hour) * 60
+#define DAY_TO_SEC(day) HOUR_TO_SEC(day) * 60
+
+
 enum operation{
     adjust_year,
     adjust_month,
