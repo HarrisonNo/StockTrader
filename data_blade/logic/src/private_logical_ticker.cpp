@@ -15,15 +15,13 @@ Assumptions:
 void logical_ticker::_load_transactions() {
     int temp_amount, temp_price;
     std::ifstream transaction_file;
-    list_insert * temp_list_insert;
     check_and_create_dirs(HISTORICAL_TICKER_DIR(_ticker));
     //Got to where historical data is stored (the balls)
     check_and_create_dirs(SAVED_ACCOUNT_TICKER_DIR(_tied_account->account_name(), _ticker));
     //We have now verified that the example path "save_info/users/HarrisonQuiring/AMD/transactions"
     transaction_file.open(SAVED_ACCOUNT_TRANSACTIONS_FILE(_tied_account->account_name(), _ticker), std::ios::in);
     while (transaction_file >> temp_amount >> temp_price) {
-        temp_list_insert = _create_list_node(temp_amount, temp_price);
-        _transactions.push_back(temp_list_insert);
+        _transactions.push_back(std::make_pair(temp_price, temp_amount));
         _transactions_list_stock_count += temp_amount;
     }
     transaction_file.close();
@@ -38,14 +36,11 @@ Assumptions:
 void logical_ticker::_save_transactions() {
     //_load_transactions is called on startup of logical_ticker which checks for transactions dir existence, no need to double check
     std::ofstream transaction_file;
-    if (!_known_stock_amount_owned) {
-        amount_owned();//Call to update in core transactions
-    }
     //Open with binary and truncate, binary removes the need/capability of catching shit like '\n' while truncate deletes the file if it already existed(possibly bad if we crashed previously?)
     transaction_file.open(SAVED_ACCOUNT_TRANSACTIONS_FILE(_tied_account->account_name(), _ticker), std::ios::out | std::ios::trunc);
-    for(std::list<list_insert*>::iterator it = _transactions.begin(); it != _transactions.end(); ++it) {
-        transaction_file << (*it)->amount << "\t";
-        transaction_file << (*it)->price << "\n";
+    for(auto it: _transactions) {
+        transaction_file << it.second << "\t";
+        transaction_file << it.first << "\n";
     }
     transaction_file.close();
 }
@@ -58,75 +53,53 @@ Description:
 Assumptions:
 */
 void logical_ticker::_modify_transaction_list(int64_t amount, double price/* = -1*/) {
+    uint_fast32_t og_amount = abs(amount);
+
     if (amount == 0) {
         return;
     }
     if (price == -1) {
         price = stock_price();
     }
+
     //Adding to list
     if (amount > 0) {
         bool inserted = false;
 
-        //Need to insert ordered, no easy way without using std::set :(
-        for (std::list<list_insert*>::iterator itr = _transactions.begin() ; itr != _transactions.end(); ++itr) {
-            //If the itr we are looking at has a greater price than the one we have then insert here
-            if ((*itr)->price > price) {
-                _transactions.insert(itr, _create_list_node(amount, price));
-                inserted = true;
-                break;
-            }
-            //If a node in the list already has the exact same price then just increment that node's amount and be done with it
-            else if ((*itr)->price == price) {
-                (*itr)->amount += amount;
+        for (auto it: _transactions) {
+            if (it.first == price) {
+                it.second += amount;
                 inserted = true;
                 break;
             }
         }
-        //Didn't actually insert anywhere, just toss to back
+
         if (!inserted) {
-            _transactions.push_back(_create_list_node(amount, price));
+            _transactions.emplace_back(price, amount);
+            sort(_transactions.begin(), _transactions.end());//I'm lazy, sue me
         }
+
         _transactions_list_stock_count += amount;
     }
     //Removing from list
     else {
-        uint_fast32_t og_amount = amount;
-        
-        amount *= -1;//Amount must have been negative
-
-        while (amount > 0 && !(_transactions.empty())) {
-            list_insert * old_transaction = _transactions.back();
-            bool sell_from_transaction = false;
-            if (old_transaction->price > price) {
-                if (_can_sell_at_loss_default) {
-                    sell_from_transaction = true;
-                }
-            } else { //Can always sell here regardless of user request
-                sell_from_transaction = true;
-            }
-
-            if (sell_from_transaction) {
-                if (amount >= old_transaction->amount) {
-                    amount -= old_transaction->amount;
-                    _transactions.pop_back();//Remove node
-                    _delete_list_node(old_transaction);//And delete it
-                } else {
-                    old_transaction->amount -= amount;
+        amount *= -1;
+        for (auto it = _transactions.begin(); it != _transactions.end(); /*Intentionally blank*/) {
+            if ((*it).second > amount) {
+                (*it).second -= amount;
+                break;
+            } else {
+                amount -= (*it).second;
+                it = _transactions.erase(it);
+                if (amount == 0) {
                     break;
                 }
-            } else {
-                break;//Can go no further
             }
         }
-        if (og_amount > _transactions_list_stock_count) {
-            ASSERT(!"amount_sold is more than known transaction_count in _modify_transaction_list");
-            _transactions_list_stock_count = 0;
-        } else {
-            _transactions_list_stock_count -= og_amount;
-        }
+        _transactions_list_stock_count -= og_amount;
     }
     _save_transactions();
+
     return;
 }
 

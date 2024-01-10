@@ -45,12 +45,6 @@ logical_ticker::~logical_ticker() {
     //Save ourselves
     save_self();
     //Then delete all new-ed memory
-    while(!(_transactions.empty())) {
-        list_insert * li = _transactions.front();
-        _transactions.pop_front();
-        delete(li);
-    }
-    
 }
 
 
@@ -73,7 +67,7 @@ Assumptions:
 */
 uint32_t logical_ticker::amount_owned(bool force_check/* = false*/) {
     time_t current_time = CURRENT_TIME();
-    uint_fast32_t discrepancy, returned_amount_owned;
+    uint_fast32_t returned_amount_owned;
 
     //If:
     //We are not forcing a wrapper call
@@ -96,10 +90,9 @@ uint32_t logical_ticker::amount_owned(bool force_check/* = false*/) {
 
     _amount_owned = returned_amount_owned;
     _time_last_checked_amount = current_time;
-    discrepancy = _transactions_list_stock_count - _amount_owned;
     //Catch discrepancy with transactions
-    if (discrepancy != 0) {
-        _modify_transaction_list(_amount_owned - _transactions_list_stock_count);
+    if (_amount_owned != _transactions_list_stock_count) {
+        _modify_transaction_list((int64_t)_amount_owned - (int64_t)_transactions_list_stock_count);
         _known_stock_amount_owned = 0;//We had to modify the list, we may not know the real amount
     } else {
         _known_stock_amount_owned = 1;
@@ -204,20 +197,20 @@ uint32_t logical_ticker::sell_amount(uint32_t amount, bool force_sell/* = false*
         selling_amount = amount - _transactions_list_stock_count;
     }
 
-    for(std::list<list_insert*>::iterator it = _transactions.begin(); it != _transactions.end(); ++it) {
+    for(auto it: _transactions) {
         if (need_amount == 0) {
             break;
         }
         //Current price is lower than bought price
-        if ((*it)->price > stock_price()) {
+        if (it.first > stock_price()) {
             if (!_can_sell_at_loss_default && !force_sell) {
                 break;
             }
         }
         //Can move forward, we are either making a profit or profit doesn't matter
-        if ((*it)->amount <= need_amount) {
-            need_amount -= (*it)->amount;
-            selling_amount += (*it)->amount;
+        if (it.second <= need_amount) {
+            need_amount -= it.second;
+            selling_amount += it.second;
         } else {
             selling_amount += need_amount;
             break;

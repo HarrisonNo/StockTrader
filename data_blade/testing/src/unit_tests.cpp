@@ -381,12 +381,10 @@ bool intermediate_repeated_buy_sell_one_advanced() {//TODO, does limited number 
             double new_stock_price = la.stock_price(ticker);//calling SET_GLOBAL now auto pushes back the time 1 second, should no longer need to force an api check
             if (og_stock_price < new_stock_price) {
                 //If the price is increasing
-                std::cout<<"BUYING"<<std::endl;
                 TEMPLATED_SAFE_SELL_STOCK(ticker, &la, 1000);//Sell all of ours, should get a good fix of full fail, partial fail
 
             } else if (og_stock_price > new_stock_price) {
                 //If the price is decreasing
-                std::cout<<"SELLING"<<std::endl;
                 TEMPLATED_SAFE_BUY_STOCK(ticker, &la, 1000);//Buy as many as we can
             }
             //We decided what we want to do by now, buy, sell, or do nothing
