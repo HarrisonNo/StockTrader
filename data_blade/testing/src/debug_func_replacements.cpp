@@ -188,7 +188,7 @@ uint32_t debug_sell_amount_REQUESTED(std::string ticker, uint32_t requested_amou
     
     uint32_t amount_removed_from_map = 0;
     auto search = debug_historical_price_GLOBAL_map.find(ticker);
-    std::map<double, uint32_t> * historical_prices_map;//Should never be an issue here, but just in case
+    std::map<double, uint32_t> * historical_prices_map;
 
     if (search != debug_historical_price_GLOBAL_map.end()) {
         historical_prices_map = &(search->second);

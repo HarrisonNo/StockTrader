@@ -421,9 +421,11 @@ bool intermediate_historical_prices_basic() {
     UNIT_TEST_TRY_WRAPPER(//Start time at 69420
         debug_stock_price_SET_GLOBAL("MSFT", 100);
         debug_current_time_SET_NATURAL_CHANGING_GLOBAL(false);
+        time_t start_time = debug_current_time_GLOBAL();
         logical_account la("test", false);
         la.stock_price("MSFT");//Save 100
         debug_sleep_for_FAKE(2);//Pretend to sleep 2 secs, now 69422
+        //time_t first_saved = debug_current_time_GLOBAL();
         debug_stock_price_SET_GLOBAL("MSFT", 150);
         la.stock_price("MSFT");//Save 150
         debug_sleep_for_FAKE(2);//Now 69424
@@ -436,20 +438,29 @@ bool intermediate_historical_prices_basic() {
         debug_stock_price_SET_GLOBAL("MSFT", 500);
         la.stock_price("MSFT");//Save 500
         time_keeper tk_one; time_keeper tk_two;
-        tk_one.adjust_second(-6); tk_two.adjust_second(-2);
+        time_t final_current_time = debug_current_time_GLOBAL();
+        tk_one.adjust_second(start_time - final_current_time);
         time_t min_time = tk_one.finalize();
         time_t max_time = tk_two.finalize();
-        THROW_IF_FALSE(min_time == 69422, min_time);
-        THROW_IF_FALSE(max_time == 69426, max_time);
+        THROW_IF_FALSE_TWO(min_time == start_time, min_time, start_time);
+        THROW_IF_FALSE_TWO(max_time == final_current_time, max_time, final_current_time);
         //type of std::vector<std::pair<time_t, double>>, but UNIT_TEST_TRY_WRAPPER macro hates the extra commas lmao. Fucken hate the limits of c++ macros
         auto historical_prices = la.get_historical_price_in_range("MSFT", min_time, max_time);//Looking at prices from 69422 to 69426, should have {150, 200, 50}//THIS IS ALSO WRONG SOMEHOW, FINALIZE ISN'T RETURNING THE NUMBER I WANT
+        THROW_IF_FALSE(historical_prices->size() == 5, historical_prices->size());
+        time_t saved_time_one = (*historical_prices)[1].first;
+        double saved_price_one = (*historical_prices)[1].second;
+        time_t saved_time_two = (*historical_prices)[2].first;
+        double saved_price_two = (*historical_prices)[2].second;
+        time_t saved_time_three = (*historical_prices)[3].first;
+        double saved_price_three = (*historical_prices)[3].second;
+        auto historical_prices_two = la.get_historical_price_in_range("MSFT", saved_time_one, saved_time_three);
         THROW_IF_FALSE(historical_prices->size() == 3, historical_prices->size());
-        THROW_IF_FALSE((*historical_prices)[0].first == 69422, (*historical_prices)[0].first);
-        THROW_IF_FALSE((*historical_prices)[0].second == 150, (*historical_prices)[0].second);
-        THROW_IF_FALSE((*historical_prices)[1].first == 69424, (*historical_prices)[1].first);
-        THROW_IF_FALSE((*historical_prices)[1].second == 200, (*historical_prices)[1].second);
-        THROW_IF_FALSE((*historical_prices)[2].first == 69426, (*historical_prices)[2].first);
-        THROW_IF_FALSE((*historical_prices)[2].second == 50, (*historical_prices)[2].second);
+        THROW_IF_FALSE_TWO((*historical_prices_two)[0].first == saved_time_one, (*historical_prices_two)[0].first, saved_time_one);
+        THROW_IF_FALSE_TWO((*historical_prices_two)[0].second == saved_price_one, (*historical_prices_two)[0].second, saved_price_one);
+        THROW_IF_FALSE_TWO((*historical_prices_two)[1].first == saved_time_two, (*historical_prices_two)[1].first, saved_time_two);
+        THROW_IF_FALSE_TWO((*historical_prices_two)[1].second == saved_price_two, (*historical_prices_two)[1].second, saved_price_two);
+        THROW_IF_FALSE_TWO((*historical_prices_two)[2].first == saved_time_three, (*historical_prices_two)[2].first, saved_time_three);
+        THROW_IF_FALSE_TWO((*historical_prices_two)[2].second == saved_price_three, (*historical_prices_two)[2].second, saved_price_three);
     )
 }
 
