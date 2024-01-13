@@ -78,15 +78,8 @@ uint32_t logical_ticker::amount_owned(bool force_check/* = false*/) {
     if (!force_check && _known_stock_amount_owned && ((current_time - _time_last_checked_amount) < MAX_KNOWN_SEC_TIMEOUT) && ((current_time - _time_last_executed_transaction) > MIN_KNOWN_SEC_TIMEOUT)) {
         return _amount_owned;
     }
-
-    try {
-        returned_amount_owned = AMOUNT_OWNED_CALL(_ticker);
-    }
-    catch (std::exception &e) {
-        ASSERT(!"amount_owned wrapper failed");
-         _known_stock_amount_owned = 0;
-        return 0;
-    }
+    
+    AMOUNT_OWNED(returned_amount_owned, _ticker, _known_stock_amount_owned = 0; return 0;);
 
     _amount_owned = returned_amount_owned;
     _time_last_checked_amount = current_time;
@@ -110,20 +103,15 @@ Assumptions:
 */
 double logical_ticker::stock_price(bool force_check/* = false*/) {
     time_t current_time = CURRENT_TIME();
+    double internal_stock_price;
 
     if (!force_check && (current_time - _time_last_checked_price) < MAX_STOCK_PRICE_TIMEOUT) {
         return _stock_price;
     }
+    
+    STOCK_PRICE(internal_stock_price, _ticker, return 0;);
 
-    try {
-        _stock_price = STOCK_PRICE_CALL(_ticker);
-    }
-    catch (std::exception &e) {
-        ASSERT(!"stock_price wrapper failed");
-        //_trigger_wrapper_failure();//Increments var and checks if enough failures have occured within X seconds, if so then trigger a clean shutdown //TODO
-        return 0;
-    }
-
+    _stock_price = internal_stock_price;
     _time_last_checked_price = current_time;
     _save_stock_price_at_time(_stock_price, current_time);
 
@@ -154,13 +142,7 @@ uint32_t logical_ticker::purchase_amount(uint32_t amount) {
         return 0;
     }
     
-    try {
-        amount = PURCHASE_AMOUNT(_ticker, amount);
-    }
-    catch (std::exception &e){
-        ASSERT(!"purchase_amount wrapper failed");
-        amount = 0;
-    }
+    PURCHASE_AMOUNT(amount, _ticker, amount, amount = 0;);
 
     _known_stock_amount_owned = 0;//Just to make sure we didn't buy anything, double check the amount we have the next time we ask for stock_amount
 
@@ -222,14 +204,8 @@ uint32_t logical_ticker::sell_amount(uint32_t amount, bool force_sell/* = false*
     if (selling_amount == 0) {
         return 0;
     }
-
-    try {
-        amount = SELL_AMOUNT(_ticker, selling_amount);
-    }
-    catch (std::exception &e){
-        ASSERT(!"sell_amount wrapper failed");
-        amount = 0;
-    }
+    
+    SELL_AMOUNT(amount, _ticker, selling_amount, amount = 0;);
 
     _known_stock_amount_owned = 0;//Just to make sure we didn't sell anything, double check the amount we have the next time we ask for stock_amount
 

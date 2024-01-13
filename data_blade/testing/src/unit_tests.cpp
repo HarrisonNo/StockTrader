@@ -9,7 +9,7 @@
 #define UNIT_TEST_TRY_WRAPPER(X) \
     std::string FailString; \
     bool ReturnVal = true; \
-    std::cout<<"Running unit test "<<__func__<<std::endl; \
+    if (!silent) {std::cout<<"Running unit test "<<__func__<<std::endl;} \
     if (DEBUG_API) {RESET_ALL_GLOBAL_VALUES} \
     try { \
         if (!DEBUG_API) {throw "DEBUG_API is not enabled, unit tests with a broker api is currently unsupported\n";} \
@@ -23,10 +23,14 @@
         FailString = e.what(); \
         ReturnVal = false; \
     } \
+    catch (...) { \
+        FailString = "UNKNOWN THROW TYPE CAUGHT"; \
+        ReturnVal = false; \
+    } \
     if (ReturnVal) { \
-        std::cout<<"Status: PASSED"<<std::endl<<std::endl; \
+        if (!silent) {std::cout<<"Status: PASSED"<<std::endl<<std::endl;} \
     } else { \
-        std::cout<<"Status: FAILED with string: "<<FailString<<std::endl<<std::endl; \
+        if (!silent) {std::cout<<"Status: FAILED with string: "<<FailString<<std::endl<<std::endl;} \
     } \
     return ReturnVal;
 
@@ -40,7 +44,7 @@
 //BASIC
 
 
-bool basic_class_creation() {
+bool basic_class_creation(bool silent/* = false*/) {
     UNIT_TEST_TRY_WRAPPER
     (
         logical_account la("test", false);
@@ -49,14 +53,14 @@ bool basic_class_creation() {
 
 //This is somewhat redundant, we aren't expecting anything different by calling new
 //The main point of this is to run after basic_class_creation to showcase that we can create and destroy the account twice in a row with no saving/loading issues
-bool basic_heap_class_creation() {
+bool basic_heap_class_creation(bool silent/* = false*/) {
     UNIT_TEST_TRY_WRAPPER(
         logical_account * la = new logical_account("test", false);
         delete(la);
     )
 }
 
-bool basic_purchase_ten() {
+bool basic_purchase_ten(bool silent/* = false*/) {
     UNIT_TEST_TRY_WRAPPER(
         //Set globals and defaults
         debug_account_cash_SET_GLOBAL(100);
@@ -75,7 +79,7 @@ bool basic_purchase_ten() {
     )
 }
 
-bool basic_async_purchase_ten() {
+bool basic_async_purchase_ten(bool silent/* = false*/) {
     UNIT_TEST_TRY_WRAPPER(
         //Set globals and defaults
         debug_account_cash_SET_GLOBAL(100);
@@ -95,7 +99,7 @@ bool basic_async_purchase_ten() {
     )
 }
 
-bool basic_purchase_extra() {
+bool basic_purchase_extra(bool silent/* = false*/) {
     UNIT_TEST_TRY_WRAPPER(
         //Set globals and defaults
         debug_account_cash_SET_GLOBAL(110);
@@ -114,7 +118,7 @@ bool basic_purchase_extra() {
     )
 }
 
-bool basic_sell_ten() {
+bool basic_sell_ten(bool silent/* = false*/) {
     UNIT_TEST_TRY_WRAPPER(
         //Set globals and defaults
         debug_account_cash_SET_GLOBAL(0);
@@ -134,7 +138,7 @@ bool basic_sell_ten() {
     )
 }
 
-bool basic_async_sell_ten() {
+bool basic_async_sell_ten(bool silent/* = false*/) {
     UNIT_TEST_TRY_WRAPPER(
         //Set globals and defaults
         debug_account_cash_SET_GLOBAL(0);
@@ -155,7 +159,7 @@ bool basic_async_sell_ten() {
     )
 }
 
-bool basic_sell_extra() {
+bool basic_sell_extra(bool silent/* = false*/) {
     UNIT_TEST_TRY_WRAPPER(
         //Set globals and defaults
         debug_account_cash_SET_GLOBAL(0);
@@ -204,7 +208,7 @@ inline void TEMPLATED_UNSAFE_SELL_STOCK(std::string ticker, logical_account * ac
 }
 
 
-bool intermediate_repeated_buy_sell_one_basic() {
+bool intermediate_repeated_buy_sell_one_basic(bool silent/* = false*/) {
     UNIT_TEST_TRY_WRAPPER(
         debug_account_cash_SET_GLOBAL(100);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
@@ -220,7 +224,7 @@ bool intermediate_repeated_buy_sell_one_basic() {
     )
 }
 
-bool intermediate_repeated_buy_sell_two_basic() {
+bool intermediate_repeated_buy_sell_two_basic(bool silent/* = false*/) {
     UNIT_TEST_TRY_WRAPPER(
         debug_account_cash_SET_GLOBAL(200);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
@@ -240,7 +244,7 @@ bool intermediate_repeated_buy_sell_two_basic() {
     )
 }
 
-bool intermediate_sell_fully_unprofitable() {
+bool intermediate_sell_fully_unprofitable(bool silent/* = false*/) {
     UNIT_TEST_TRY_WRAPPER(
         debug_account_cash_SET_GLOBAL(100);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
@@ -258,7 +262,7 @@ bool intermediate_sell_fully_unprofitable() {
     )
 }
 
-bool intermediate_sell_partially_unprofitable() {
+bool intermediate_sell_partially_unprofitable(bool silent/* = false*/) {
     UNIT_TEST_TRY_WRAPPER(
         debug_account_cash_SET_GLOBAL(200);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
@@ -277,7 +281,7 @@ bool intermediate_sell_partially_unprofitable() {
     )
 }
 
-bool intermediate_force_sell_fully_unprofitable() {
+bool intermediate_force_sell_fully_unprofitable(bool silent/* = false*/) {
     UNIT_TEST_TRY_WRAPPER(
         debug_account_cash_SET_GLOBAL(100);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
@@ -357,7 +361,7 @@ inline void TEMPLATED_SAFE_SELL_STOCK(std::string ticker, logical_account * acco
 }
 
 
-bool intermediate_repeated_buy_sell_one_advanced() {//TODO, does limited number checking
+bool intermediate_repeated_buy_sell_one_advanced(bool silent/* = false*/) {//TODO, does limited number checking
     UNIT_TEST_TRY_WRAPPER(
         //IMPLEMENTATION OF RNG
         //For number of itertions
@@ -396,7 +400,7 @@ bool intermediate_repeated_buy_sell_one_advanced() {//TODO, does limited number 
     )
 }
 
-bool intermediate_load_saved_transactions() {
+bool intermediate_load_saved_transactions(bool silent/* = false*/) {
     UNIT_TEST_TRY_WRAPPER(
         debug_account_cash_SET_GLOBAL(200);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
@@ -417,7 +421,7 @@ bool intermediate_load_saved_transactions() {
 }
 
 //Basic version of historical prices with only a couple seconds deviation
-bool intermediate_historical_prices_basic() {
+bool intermediate_historical_prices_basic(bool silent/* = false*/) {
     UNIT_TEST_TRY_WRAPPER(//Start time at 69420
         debug_stock_price_SET_GLOBAL("MSFT", 100);
         debug_current_time_SET_NATURAL_CHANGING_GLOBAL(false);

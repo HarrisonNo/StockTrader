@@ -14,7 +14,7 @@ Output:
 Description:
 Assumptions:
 */
-logical_account::logical_account(std::string account_name/* = "PLACEHOLDER"*/, bool load_existing/* = true*/) {
+logical_account::logical_account(std::string account_name, bool load_existing/* = true*/) {
     _number_of_projections = 0;
     _time_last_checked_cash = 0;
     _account_name = account_name;
@@ -25,6 +25,7 @@ logical_account::logical_account(std::string account_name/* = "PLACEHOLDER"*/, b
         _purge_all_saved_info();
     }
     //Everything else will get auto loaded as we call the respective ticker funcs
+    //TODO this can cause problems as later on we assume that we always have loaded anything we have worked on
     check_and_create_dirs(SAVED_ACCOUNT_DIR(account_name));//Do a second time in case we purged the previous case
 }
 
@@ -213,14 +214,8 @@ double logical_account::available_cash(bool force_check/* = false*/) {
     if (_known_cash_amount && !force_check && ((current_time - _time_last_checked_cash) < MAX_KNOWN_SEC_TIMEOUT)) {
         return _cash;
     }
-
-    try {
-        internal_cash = ACCOUNT_CASH;
-    }
-    catch (std::exception &e){
-        ASSERT(!"amount_owned wrapper failed");
-        return 0;
-    }
+    
+    ACCOUNT_CASH(internal_cash, _known_cash_amount = 0; return 0;);
 
     _cash_lock.lock();
     _cash = internal_cash;
@@ -269,3 +264,23 @@ std::vector<std::pair<time_t, double>> * logical_account::get_historical_price_i
     return lt->load_historical_prices(min_time, max_time);
 }
 
+
+/*
+Input:
+Output:
+Description: Returns available cash and current evaluation of all owned stocks
+Assumptions: Assumes we have all owned stocks loaded into _logical_tickers(NOT NECESSARILY TRUE, NEEDS TO BE FIXED)
+*/
+double logical_account::account_value(bool force_check/* = false*/) {
+    //TODO this currently has a bug, if we call account_value immediately after construction and before
+    //the account has loaded all of it's logical_tickers, we will underestimate our total value
+    double total_value;
+    
+    ACCOUNT_CASH(total_value, total_value = 0;);
+
+    for (auto it: _logical_tickers) {
+        total_value += it.second->stock_price(force_check) * it.second->amount_owned(force_check);
+    }
+
+    return total_value;
+}

@@ -49,6 +49,7 @@ class logical_account {
         inline void mark_known_cash_unkown() {_known_cash_amount = 0;}
 
         double available_cash(bool force_check = false);
+        double account_value(bool force_check = false);//Totals the stock values and cash
         double stock_price(std::string ticker, bool force_check = false);
 
         uint32_t buy_stock(std::string ticker, uint32_t amount);
@@ -67,7 +68,6 @@ class logical_account {
 
         std::string account_name();
 };
-
 
 
 
