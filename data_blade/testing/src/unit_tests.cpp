@@ -449,7 +449,7 @@ bool intermediate_historical_prices_basic(bool silent/* = false*/) {
         THROW_IF_FALSE_TWO(min_time == start_time, min_time, start_time);
         THROW_IF_FALSE_TWO(max_time == final_current_time, max_time, final_current_time);
         //type of std::vector<std::pair<time_t, double>>, but UNIT_TEST_TRY_WRAPPER macro hates the extra commas lmao. Fucken hate the limits of c++ macros
-        auto historical_prices = la.get_historical_price_in_range("MSFT", min_time, max_time);//Looking at prices from 69422 to 69426, should have {150, 200, 50}//THIS IS ALSO WRONG SOMEHOW, FINALIZE ISN'T RETURNING THE NUMBER I WANT
+        auto historical_prices = la.get_historical_price_in_range("MSFT", min_time, max_time);
         THROW_IF_FALSE(historical_prices->size() == 5, historical_prices->size());
         time_t saved_time_one = (*historical_prices)[1].first;
         double saved_price_one = (*historical_prices)[1].second;

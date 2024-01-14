@@ -1,6 +1,6 @@
 #include "global_defines.h"
 #include "broker_api_class.h"
-#include "debug_api.h"//Include debug in if statement to not include global vars located inside
+#include "debug_api.h"
 
 #ifndef DEBUG_API_AND_WRAPPER
 #define DEBUG_API_AND_WRAPPER
