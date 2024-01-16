@@ -18,6 +18,8 @@ time_t debug_current_time_ADDED_GLOBAL_var = 0;
 bool debug_current_time_NATURAL_CHANGING_GLOBAL_var = true;
 uint64_t debug_rng_var = DEFAULT_RNG;
 std::map<std::string, std::map<double, uint32_t>> debug_historical_price_GLOBAL_map;//map with a key of the ticker string, yielding a second map storing the <price, amount_owned> //TODO add and remove when buying/selling
+uint32_t debug_api_failure_GLOBAL_var = 0;//0 means that it is not active, api has a 100% chance of success
+bool debug_api_failure_HAS_FAILED_GLOBAL_var = false;
 
 //So far five types of debug funcs
 //uint32_t debug_amount_owned_func(std::string)
@@ -28,6 +30,11 @@ std::map<std::string, std::map<double, uint32_t>> debug_historical_price_GLOBAL_
 
 //AMOUNT_OWNED
 uint32_t debug_amount_owned_GLOBAL(std::string ticker) {
+    if (debug_api_failure_FAIL_GLOBAL()) {
+        debug_api_failure_HAS_FAILED_GLOBAL_var = true;
+        throw("Fuck");
+    }
+
     uint32_t owned = 0;
     if (auto search = debug_amount_owned_GLOBAL_map.find(ticker); search != debug_amount_owned_GLOBAL_map.end()) {
         owned = search->second;
@@ -65,6 +72,11 @@ uint32_t debug_amount_owned_USER(std::string ticker) {
 
 //STOCK_PRICE
 double debug_stock_price_GLOBAL(std::string ticker) {
+    if (debug_api_failure_FAIL_GLOBAL()) {
+        debug_api_failure_HAS_FAILED_GLOBAL_var = true;
+        throw("Fuck");
+    }
+
     double price = 0;
     if (auto search = debug_stock_price_GLOBAL_map.find(ticker); search != debug_stock_price_GLOBAL_map.end()) {
         price = search->second;
@@ -98,6 +110,11 @@ double debug_stock_price_USER(std::string ticker) {
 
 //ACCOUNT CASH
 double debug_account_cash_GLOBAL() {
+    if (debug_api_failure_FAIL_GLOBAL()) {
+        debug_api_failure_HAS_FAILED_GLOBAL_var = true;
+        throw("Fuck");
+    }
+
     debug_ADJUST_RNG(1);
     return debug_account_cash_GLOBAL_var;
 }
@@ -130,6 +147,12 @@ double debug_account_cash_USER() {
 
 //PURCHASE AMOUNT
 uint32_t debug_purchase_amount_REQUESTED(std::string ticker, uint32_t requested_amount) {
+    if (debug_api_failure_FAIL_GLOBAL()) {
+        debug_api_failure_HAS_FAILED_GLOBAL_var = true;
+        throw("Fuck");
+    }
+
+    uint32_t old_fail_rate = debug_api_failure_SET_GLOBAL(0);
     double initial_account_cash = debug_account_cash_func();
     double initial_stock_price = debug_stock_price_func(ticker);
 
@@ -163,6 +186,8 @@ uint32_t debug_purchase_amount_REQUESTED(std::string ticker, uint32_t requested_
         (*historical_prices_map)[initial_stock_price] = requested_amount;
     }
 
+    debug_api_failure_SET_GLOBAL(old_fail_rate);
+
     return requested_amount;
 }
 
@@ -170,6 +195,11 @@ uint32_t debug_purchase_amount_REQUESTED(std::string ticker, uint32_t requested_
 
 //SELL AMOUNT
 uint32_t debug_sell_amount_REQUESTED(std::string ticker, uint32_t requested_amount) {
+    if (debug_api_failure_FAIL_GLOBAL()) {
+        debug_api_failure_HAS_FAILED_GLOBAL_var = true;
+        throw("Fuck");
+    }
+    uint32_t old_fail_rate = debug_api_failure_SET_GLOBAL(0);
     uint32_t already_owned_amount = debug_amount_owned_func(ticker);
     
     debug_ADJUST_RNG(1);
@@ -216,6 +246,8 @@ uint32_t debug_sell_amount_REQUESTED(std::string ticker, uint32_t requested_amou
     if (amount_removed_from_map < requested_amount) {
         throw("ERROR: debug_sell_amount_REQUESTED unable to remove enough entries from historical map\n");
     }
+
+    debug_api_failure_SET_GLOBAL(old_fail_rate);
 
     return requested_amount;
 }
@@ -385,4 +417,39 @@ uint32_t debug_historical_price_PROFITABLE_GLOBAL(std::string ticker, double pri
     }
 
     return total_sellable;
+}
+
+
+
+//API FAILURE
+uint32_t debug_api_failure_GET_GLOBAL() {
+    return debug_api_failure_GLOBAL_var;
+}
+
+uint32_t debug_api_failure_SET_GLOBAL(uint32_t new_val) {
+    uint32_t og_val = debug_api_failure_GLOBAL_var;
+    debug_api_failure_GLOBAL_var = new_val;
+    return og_val;
+}
+
+void debug_api_failure_RESET_GLOBAL() {
+    debug_api_failure_GLOBAL_var = 0;
+}
+
+//Should we fail this api call?
+bool debug_api_failure_FAIL_GLOBAL() {
+    if (!debug_api_failure_GLOBAL_var) {//If value is zero, we should not fail the api call
+        return false;
+    }
+    return (debug_RNG_GENERATE(debug_api_failure_GLOBAL_var) == 0);
+}
+
+bool debug_api_failure_HAS_FAILED_GLOBAL() {
+    return debug_api_failure_HAS_FAILED_GLOBAL_var;
+}
+
+bool debug_api_failure_RESET_HAS_FAILED_GLOBAL() {
+    bool old_val = debug_api_failure_HAS_FAILED_GLOBAL_var;
+    debug_api_failure_HAS_FAILED_GLOBAL_var = false;
+    return old_val;
 }

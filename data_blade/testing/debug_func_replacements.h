@@ -33,7 +33,8 @@
     debug_current_time_SET_NATURAL_CHANGING_GLOBAL(true); \
     std::filesystem::remove_all(SAVED_TICKER_DIR); \
     std::filesystem::remove_all(SAVED_ACCOUNT_USERS_DIR); \
-    debug_RESET_RNG();
+    debug_RESET_RNG(); \
+    debug_api_failure_RESET_GLOBAL();
 
 //amount_owned
 //Return set global val
@@ -95,7 +96,7 @@ bool debug_RNG_GENERATE_ODDS(uint32_t positive_coefficient, uint32_t negative_co
 
 
 //PRICE RNG
-double debug_PRICE_RNG_generate_new_price(std::string ticker, uint32_t positive_coefficient, uint32_t negative_cofficient, 
+double debug_PRICE_RNG_generate_new_price(std::string ticker, uint32_t positive_coefficient, uint32_t negative_cofficient,
                                           double average_pos_percent_change, double max_pos_percent_change,
                                           double average_neg_percent_change, double max_neg_percent_change);
 
@@ -111,6 +112,15 @@ void debug_sleep_for_FAKE(time_t sleep_secs);
 void debug_historical_price_RESET_GLOBAL();
 uint32_t debug_historical_price_PROFITABLE_GLOBAL(std::string ticker, double price);
 
+
+
+//API FAILURE
+uint32_t debug_api_failure_GET_GLOBAL();
+uint32_t debug_api_failure_SET_GLOBAL(uint32_t new_val);//Returns old val
+void debug_api_failure_RESET_GLOBAL();
+bool debug_api_failure_FAIL_GLOBAL();
+bool debug_api_failure_HAS_FAILED_GLOBAL();//Have we explicitly failed the latest trade?
+bool debug_api_failure_RESET_HAS_FAILED_GLOBAL();//Returns old val
 
 
 

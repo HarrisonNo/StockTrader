@@ -96,7 +96,8 @@ uint32_t logical_account::buy_stock(std::string ticker, uint32_t amount) {
     stock_price = lt->stock_price(true);
     total_projected_cost = amount * stock_price;
 
-    if (total_projected_cost > _projected_cash) {
+    //Stock price cannot have returned 0
+    if (stock_price && total_projected_cost > _projected_cash) {
         amount = _projected_cash / stock_price;
         if (amount == 0) {
             return 0;

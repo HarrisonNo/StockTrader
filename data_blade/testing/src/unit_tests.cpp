@@ -6,33 +6,38 @@
 #include "debug_func_replacements.h"
 #include "directory_file_saving.h"
 
-#define UNIT_TEST_TRY_WRAPPER(X) \
-    std::string FailString; \
-    bool ReturnVal = true; \
-    if (!silent) {std::cout<<"Running unit test "<<__func__<<std::endl;} \
-    if (DEBUG_API) {RESET_ALL_GLOBAL_VALUES} \
-    try { \
-        if (!DEBUG_API) {throw "DEBUG_API is not enabled, unit tests with a broker api is currently unsupported\n";} \
-        X \
+//This is cursed
+#define UNIT_TEST(FuncName) \
+    void internals_##FuncName(); \
+    bool FuncName (bool silent) { \
+        std::string FailString; \
+        bool ReturnVal = true; \
+        if (!silent) {std::cout<<"Running unit test "<<__func__<<std::endl;} \
+        if (DEBUG_API) {RESET_ALL_GLOBAL_VALUES} \
+        try { \
+            if (!DEBUG_API) {throw "DEBUG_API is not enabled, unit tests with a broker api is currently unsupported\n";} \
+            internals_##FuncName(); \
+        } \
+        catch (std::string st) { \
+            FailString = st; \
+            ReturnVal = false; \
+        } \
+        catch (std::exception &e) { \
+            FailString = e.what(); \
+            ReturnVal = false; \
+        } \
+        catch (...) { \
+            FailString = "UNKNOWN THROW TYPE CAUGHT"; \
+            ReturnVal = false; \
+        } \
+        if (ReturnVal) { \
+            if (!silent) {std::cout<<"Status: PASSED"<<std::endl<<std::endl;} \
+        } else { \
+            if (!silent) {std::cout<<"Status: FAILED with string: "<<FailString<<std::endl<<std::endl;} \
+        } \
+        return ReturnVal; \
     } \
-    catch (std::string st) { \
-        FailString = st; \
-        ReturnVal = false; \
-    } \
-    catch (std::exception &e) { \
-        FailString = e.what(); \
-        ReturnVal = false; \
-    } \
-    catch (...) { \
-        FailString = "UNKNOWN THROW TYPE CAUGHT"; \
-        ReturnVal = false; \
-    } \
-    if (ReturnVal) { \
-        if (!silent) {std::cout<<"Status: PASSED"<<std::endl<<std::endl;} \
-    } else { \
-        if (!silent) {std::cout<<"Status: FAILED with string: "<<FailString<<std::endl<<std::endl;} \
-    } \
-    return ReturnVal;
+    void internals_##FuncName()
 
 
 #define THROW_IF_FALSE(Statement, Var) if (!(Statement)) {throw "Failed unit test line "+std::to_string(__LINE__)+" which is '"#Statement"' with a value of "+std::to_string(Var);}//TODO have ASSERTS mimic this?
@@ -42,104 +47,88 @@
 
 
 //BASIC
-
-
-bool basic_class_creation(bool silent/* = false*/) {
-    UNIT_TEST_TRY_WRAPPER
-    (
-        logical_account la("test", false);
-    )
+UNIT_TEST(basic_class_creation) {
+    logical_account la("test", false);
 }
 
 //This is somewhat redundant, we aren't expecting anything different by calling new
 //The main point of this is to run after basic_class_creation to showcase that we can create and destroy the account twice in a row with no saving/loading issues
-bool basic_heap_class_creation(bool silent/* = false*/) {
-    UNIT_TEST_TRY_WRAPPER(
-        logical_account * la = new logical_account("test", false);
-        delete(la);
-    )
+UNIT_TEST(basic_heap_class_creation) {
+    logical_account * la = new logical_account("test", false);
+    delete(la);
 }
 
-bool basic_purchase_ten(bool silent/* = false*/) {
-    UNIT_TEST_TRY_WRAPPER(
-        //Set globals and defaults
-        debug_account_cash_SET_GLOBAL(100);
-        debug_stock_price_SET_GLOBAL("MSFT", 10);
-        //Start program
-        logical_account la("test", false);
-        uint32_t bought_stock = la.held_stock("MSFT");
-        double account_cash = la.available_cash();
-        THROW_IF_FALSE(bought_stock == 0, bought_stock);
-        THROW_IF_FALSE(account_cash == 100, account_cash);
-        la.buy_stock("MSFT", 10);
-        bought_stock = la.held_stock("MSFT");
-        account_cash = la.available_cash();
-        THROW_IF_FALSE(bought_stock == 10, bought_stock);
-        THROW_IF_FALSE(account_cash == 0, account_cash);
-    )
+UNIT_TEST(basic_purchase_ten) {
+    //Set globals and defaults
+    debug_account_cash_SET_GLOBAL(100);
+    debug_stock_price_SET_GLOBAL("MSFT", 10);
+    //Start program
+    logical_account la("test", false);
+    uint32_t bought_stock = la.held_stock("MSFT");
+    double account_cash = la.available_cash();
+    THROW_IF_FALSE(bought_stock == 0, bought_stock);
+    THROW_IF_FALSE(account_cash == 100, account_cash);
+    la.buy_stock("MSFT", 10);
+    bought_stock = la.held_stock("MSFT");
+    account_cash = la.available_cash();
+    THROW_IF_FALSE(bought_stock == 10, bought_stock);
+    THROW_IF_FALSE(account_cash == 0, account_cash);
 }
 
-bool basic_async_purchase_ten(bool silent/* = false*/) {
-    UNIT_TEST_TRY_WRAPPER(
-        //Set globals and defaults
-        debug_account_cash_SET_GLOBAL(100);
-        debug_stock_price_SET_GLOBAL("MSFT", 10);
-        //Start program
-        logical_account la("test", false);
-        uint32_t bought_stock = la.held_stock("MSFT");
-        double account_cash = la.available_cash();
-        THROW_IF_FALSE(bought_stock == 0, bought_stock);
-        THROW_IF_FALSE(account_cash == 100, account_cash);
-        auto key = la.async_buy_stock("MSFT", 10);
-        key.wait();
-        bought_stock = la.held_stock("MSFT");
-        account_cash = la.available_cash();
-        THROW_IF_FALSE(bought_stock == 10, bought_stock);
-        THROW_IF_FALSE(account_cash == 0, account_cash);
-    )
+UNIT_TEST(basic_async_purchase_ten) {
+    //Set globals and defaults
+    debug_account_cash_SET_GLOBAL(100);
+    debug_stock_price_SET_GLOBAL("MSFT", 10);
+    //Start program
+    logical_account la("test", false);
+    uint32_t bought_stock = la.held_stock("MSFT");
+    double account_cash = la.available_cash();
+    THROW_IF_FALSE(bought_stock == 0, bought_stock);
+    THROW_IF_FALSE(account_cash == 100, account_cash);
+    auto key = la.async_buy_stock("MSFT", 10);
+    key.wait();
+    bought_stock = la.held_stock("MSFT");
+    account_cash = la.available_cash();
+    THROW_IF_FALSE(bought_stock == 10, bought_stock);
+    THROW_IF_FALSE(account_cash == 0, account_cash);
 }
 
-bool basic_purchase_extra(bool silent/* = false*/) {
-    UNIT_TEST_TRY_WRAPPER(
-        //Set globals and defaults
-        debug_account_cash_SET_GLOBAL(110);
-        debug_stock_price_SET_GLOBAL("MSFT", 25);
-        //Start program
-        logical_account la("test", false);
-        uint32_t bought_stock = la.held_stock("MSFT");
-        double account_cash = la.available_cash();
-        THROW_IF_FALSE(bought_stock == 0, bought_stock);
-        THROW_IF_FALSE(account_cash == 110, account_cash);
-        la.buy_stock("MSFT", 10);//Attempts to buy 10 when we only have the money for 4 shares
-        bought_stock = la.held_stock("MSFT");
-        account_cash = la.available_cash();
-        THROW_IF_FALSE(bought_stock == 4, bought_stock);
-        THROW_IF_FALSE(account_cash == 10, account_cash);
-    )
+UNIT_TEST(basic_purchase_extra) {
+    //Set globals and defaults
+    debug_account_cash_SET_GLOBAL(110);
+    debug_stock_price_SET_GLOBAL("MSFT", 25);
+    //Start program
+    logical_account la("test", false);
+    uint32_t bought_stock = la.held_stock("MSFT");
+    double account_cash = la.available_cash();
+    THROW_IF_FALSE(bought_stock == 0, bought_stock);
+    THROW_IF_FALSE(account_cash == 110, account_cash);
+    la.buy_stock("MSFT", 10);//Attempts to buy 10 when we only have the money for 4 shares
+    bought_stock = la.held_stock("MSFT");
+    account_cash = la.available_cash();
+    THROW_IF_FALSE(bought_stock == 4, bought_stock);
+    THROW_IF_FALSE(account_cash == 10, account_cash);
 }
 
-bool basic_sell_ten(bool silent/* = false*/) {
-    UNIT_TEST_TRY_WRAPPER(
-        //Set globals and defaults
-        debug_account_cash_SET_GLOBAL(0);
-        debug_stock_price_SET_GLOBAL("MSFT", 10);
-        debug_amount_owned_SET_GLOBAL("MSFT", 10);
-        //Start program
-        logical_account la("test", false);
-        uint32_t sold_stock = la.held_stock("MSFT");
-        double account_cash = la.available_cash();
-        THROW_IF_FALSE(sold_stock == 10, sold_stock);
-        THROW_IF_FALSE(account_cash == 0, account_cash);
-        la.sell_stock("MSFT", 10);
-        sold_stock = la.held_stock("MSFT");
-        account_cash = la.available_cash();
-        THROW_IF_FALSE(sold_stock == 0, sold_stock);
-        THROW_IF_FALSE(account_cash == 100, account_cash);
-    )
+UNIT_TEST(basic_sell_ten) {
+    //Set globals and defaults
+    debug_account_cash_SET_GLOBAL(0);
+    debug_stock_price_SET_GLOBAL("MSFT", 10);
+    debug_amount_owned_SET_GLOBAL("MSFT", 10);
+    //Start program
+    logical_account la("test", false);
+    uint32_t sold_stock = la.held_stock("MSFT");
+    double account_cash = la.available_cash();
+    THROW_IF_FALSE(sold_stock == 10, sold_stock);
+    THROW_IF_FALSE(account_cash == 0, account_cash);
+    la.sell_stock("MSFT", 10);
+    sold_stock = la.held_stock("MSFT");
+    account_cash = la.available_cash();
+    THROW_IF_FALSE(sold_stock == 0, sold_stock);
+    THROW_IF_FALSE(account_cash == 100, account_cash);
 }
 
-bool basic_async_sell_ten(bool silent/* = false*/) {
-    UNIT_TEST_TRY_WRAPPER(
+UNIT_TEST(basic_async_sell_ten) {
         //Set globals and defaults
         debug_account_cash_SET_GLOBAL(0);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
@@ -156,11 +145,9 @@ bool basic_async_sell_ten(bool silent/* = false*/) {
         account_cash = la.available_cash();
         THROW_IF_FALSE(sold_stock == 0, sold_stock);
         THROW_IF_FALSE(account_cash == 100, account_cash);
-    )
 }
 
-bool basic_sell_extra(bool silent/* = false*/) {
-    UNIT_TEST_TRY_WRAPPER(
+UNIT_TEST(basic_sell_extra) {
         //Set globals and defaults
         debug_account_cash_SET_GLOBAL(0);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
@@ -176,7 +163,6 @@ bool basic_sell_extra(bool silent/* = false*/) {
         account_cash = la.available_cash();
         THROW_IF_FALSE(sold_stock == 0, sold_stock);
         THROW_IF_FALSE(account_cash == 40, account_cash);
-    )
 }
 
 
@@ -208,8 +194,7 @@ inline void TEMPLATED_UNSAFE_SELL_STOCK(std::string ticker, logical_account * ac
 }
 
 
-bool intermediate_repeated_buy_sell_one_basic(bool silent/* = false*/) {
-    UNIT_TEST_TRY_WRAPPER(
+UNIT_TEST(intermediate_repeated_buy_sell_one_basic) {
         debug_account_cash_SET_GLOBAL(100);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
         //amount owned for msft should auto-default to 0
@@ -221,11 +206,9 @@ bool intermediate_repeated_buy_sell_one_basic(bool silent/* = false*/) {
         TEMPLATED_UNSAFE_BUY_STOCK("MSFT", &la, 5);//$0 remaining
         debug_stock_price_SET_GLOBAL("MSFT", 50);
         TEMPLATED_UNSAFE_SELL_STOCK("MSFT", &la, 5);//$250 remaining
-    )
 }
 
-bool intermediate_repeated_buy_sell_two_basic(bool silent/* = false*/) {
-    UNIT_TEST_TRY_WRAPPER(
+UNIT_TEST(intermediate_repeated_buy_sell_two_basic) {
         debug_account_cash_SET_GLOBAL(200);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
         debug_stock_price_SET_GLOBAL("AAPL", 20);
@@ -241,11 +224,9 @@ bool intermediate_repeated_buy_sell_two_basic(bool silent/* = false*/) {
         TEMPLATED_UNSAFE_BUY_STOCK("MSFT", &la, 5);
         debug_stock_price_SET_GLOBAL("MSFT", 50);
         TEMPLATED_UNSAFE_SELL_STOCK("MSFT", &la, 5);
-    )
 }
 
-bool intermediate_sell_fully_unprofitable(bool silent/* = false*/) {
-    UNIT_TEST_TRY_WRAPPER(
+UNIT_TEST(intermediate_sell_fully_unprofitable) {
         debug_account_cash_SET_GLOBAL(100);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
         logical_account la("test", false);
@@ -259,11 +240,9 @@ bool intermediate_sell_fully_unprofitable(bool silent/* = false*/) {
         THROW_IF_FALSE(stock_held == 10, stock_held);
         debug_stock_price_SET_GLOBAL("MSFT", 20);
         TEMPLATED_UNSAFE_SELL_STOCK("MSFT", &la, 10);//Should fully succeed
-    )
 }
 
-bool intermediate_sell_partially_unprofitable(bool silent/* = false*/) {
-    UNIT_TEST_TRY_WRAPPER(
+UNIT_TEST(intermediate_sell_partially_unprofitable) {
         debug_account_cash_SET_GLOBAL(200);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
         logical_account la("test", false);
@@ -278,11 +257,9 @@ bool intermediate_sell_partially_unprofitable(bool silent/* = false*/) {
         THROW_IF_FALSE(stock_held == 5, stock_held);
         debug_stock_price_SET_GLOBAL("MSFT", 25);
         TEMPLATED_UNSAFE_SELL_STOCK("MSFT", &la, 5);//Should fully succeed
-    )
 }
 
-bool intermediate_force_sell_fully_unprofitable(bool silent/* = false*/) {
-    UNIT_TEST_TRY_WRAPPER(
+UNIT_TEST(intermediate_force_sell_fully_unprofitable) {
         debug_account_cash_SET_GLOBAL(100);
         debug_stock_price_SET_GLOBAL("MSFT", 10);
         logical_account la("test", false);
@@ -294,7 +271,6 @@ bool intermediate_force_sell_fully_unprofitable(bool silent/* = false*/) {
         THROW_IF_FALSE(account_cash == 0, account_cash);
         THROW_IF_FALSE(stock_held == 10, stock_held);
         TEMPLATED_UNSAFE_SELL_STOCK("MSFT", &la, 10, true);//Should fully succeed
-    )
 }
 
 inline void VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(std::string ticker, logical_account * account) {
@@ -327,7 +303,10 @@ inline void TEMPLATED_SAFE_BUY_STOCK(std::string ticker, logical_account * accou
 
     uint32_t amount_actually_bought = account->buy_stock(ticker, to_buy_amount);
 
+    double new_cash = account->available_cash();
+
     THROW_IF_FALSE_TWO(expected_bought_amount == amount_actually_bought, expected_bought_amount, amount_actually_bought);
+    THROW_IF_FALSE_TWO(new_cash == (og_cash - (expected_bought_amount * og_price)), new_cash, (og_cash - (expected_bought_amount * og_price)));
 
     VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(ticker, account);
 }
@@ -336,6 +315,8 @@ inline void TEMPLATED_SAFE_BUY_STOCK(std::string ticker, logical_account * accou
 inline void TEMPLATED_SAFE_SELL_STOCK(std::string ticker, logical_account * account, uint32_t to_sell_amount, bool force_sell = false) {
     uint32_t og_amount_owned = debug_amount_owned_GLOBAL(ticker);
     uint32_t expected_sell_amount;
+    double og_cash = debug_account_cash_GLOBAL();
+    double og_stock_price = debug_stock_price_GLOBAL(ticker);
 
     VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(ticker, account);
 
@@ -355,117 +336,164 @@ inline void TEMPLATED_SAFE_SELL_STOCK(std::string ticker, logical_account * acco
 
     uint32_t amount_actually_sold = account->sell_stock(ticker, to_sell_amount, force_sell);
 
+    double new_cash = account->available_cash();
+
     THROW_IF_FALSE_TWO(expected_sell_amount == amount_actually_sold, expected_sell_amount, amount_actually_sold);
+    THROW_IF_FALSE_TWO(new_cash == (og_cash + (expected_sell_amount * og_stock_price)), new_cash, (og_cash + (expected_sell_amount * og_stock_price)));
 
     VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(ticker, account);
 }
 
 
-bool intermediate_repeated_buy_sell_one_advanced(bool silent/* = false*/) {//TODO, does limited number checking
-    UNIT_TEST_TRY_WRAPPER(
+UNIT_TEST(intermediate_repeated_buy_sell_one_advanced) {//TODO, does limited number checking
+    //IMPLEMENTATION OF RNG
+    //For number of itertions
+    std::string ticker = "MSFT";
+
+    debug_account_cash_SET_GLOBAL(5000);
+    debug_stock_price_SET_GLOBAL(ticker, 250);
+    debug_ADJUST_RNG(78567482);
+
+    logical_account la("test", false);
+    VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(ticker, &la);
+    for (int i = 0; i < 100; i++) {
+        /* HAVE MULTIPLE VERSIONS OF THIS UNIT TEST WITH VARYING BALANCES
+        double new_price = debug_PRICE_RNG_generate_new_price("MSFT", 4, 3,
+                                                                .76, 2.4,
+                                                                .8, 1.8); */
+        double og_stock_price = la.stock_price(ticker);
+        debug_stock_price_SET_GLOBAL(ticker, debug_PRICE_RNG_generate_new_price(ticker, 1, 1,
+                                                                                .8, 2.5,
+                                                                                .75, 2));
+        double new_stock_price = la.stock_price(ticker);//calling SET_GLOBAL now auto pushes back the time 1 second, should no longer need to force an api check
+        if (og_stock_price < new_stock_price) {
+            //If the price is increasing
+            TEMPLATED_SAFE_SELL_STOCK(ticker, &la, 1000);//Sell all of ours, should get a good fix of full fail, partial fail
+
+        } else if (og_stock_price > new_stock_price) {
+            //If the price is decreasing
+            TEMPLATED_SAFE_BUY_STOCK(ticker, &la, 1000);//Buy as many as we can
+        }
+        //We decided what we want to do by now, buy, sell, or do nothing
+        VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(ticker, &la);//SHOULD WE BE DOING ANYTHING ELSE?
+
+        debug_ADJUST_RNG(1);
+        debug_current_time_SET_GLOBAL(debug_current_time_GLOBAL() + DAY_TO_SEC(1));
+    }
+}
+
+UNIT_TEST(intermediate_repeated_buy_sell_one_expert) {//TODO
         //IMPLEMENTATION OF RNG
         //For number of itertions
-        std::string ticker = "MSFT";
+        std::string ticker[] = {"MSFT", "AAPL"};
 
         debug_account_cash_SET_GLOBAL(5000);
-        debug_stock_price_SET_GLOBAL(ticker, 250);
-        debug_ADJUST_RNG(78567482);
+        debug_stock_price_SET_GLOBAL(ticker[0], 250);
+        debug_stock_price_SET_GLOBAL(ticker[1], 324);
+        debug_ADJUST_RNG(7856734);
 
         logical_account la("test", false);
-        VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(ticker, &la);
+        VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(ticker[0], &la);
+        VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(ticker[1], &la);
         for (int i = 0; i < 100; i++) {
-            /* HAVE MULTIPLE VERSIONS OF THIS UNIT TEST WITH VARYING BALANCES
-            double new_price = debug_PRICE_RNG_generate_new_price("MSFT", 4, 3,
-                                                                    .76, 2.4,
-                                                                    .8, 1.8); */
-            double og_stock_price = la.stock_price(ticker);
-            debug_stock_price_SET_GLOBAL(ticker, debug_PRICE_RNG_generate_new_price(ticker, 1, 1,
-                                                                                    .8, 2.5,
+            double og_stock_price_zero = la.stock_price(ticker[0]);
+            debug_stock_price_SET_GLOBAL(ticker[0], debug_PRICE_RNG_generate_new_price(ticker[0], 1, 1,
+                                                                                    .85, 2.75,
                                                                                     .75, 2));
-            double new_stock_price = la.stock_price(ticker);//calling SET_GLOBAL now auto pushes back the time 1 second, should no longer need to force an api check
-            if (og_stock_price < new_stock_price) {
+            double og_stock_price_one = la.stock_price(ticker[1]);
+            debug_stock_price_SET_GLOBAL(ticker[1], debug_PRICE_RNG_generate_new_price(ticker[1], 2, 1,
+                                                                                    .75, 2,
+                                                                                    .75, 2));                                                                        
+            double new_stock_price_zero = la.stock_price(ticker[0]);//calling SET_GLOBAL now auto pushes back the time 1 second, should no longer need to force an api check
+            double new_stock_price_one = la.stock_price(ticker[1]);
+            if (og_stock_price_zero < new_stock_price_zero) {
                 //If the price is increasing
-                TEMPLATED_SAFE_SELL_STOCK(ticker, &la, 1000);//Sell all of ours, should get a good fix of full fail, partial fail
+                TEMPLATED_SAFE_SELL_STOCK(ticker[0], &la, 1000);//Sell all of ours, should get a good fix of full fail, partial fail
 
-            } else if (og_stock_price > new_stock_price) {
+            } else if (og_stock_price_zero > new_stock_price_zero) {
                 //If the price is decreasing
-                TEMPLATED_SAFE_BUY_STOCK(ticker, &la, 1000);//Buy as many as we can
+                TEMPLATED_SAFE_BUY_STOCK(ticker[0], &la, 1000);//Buy as many as we can
+            }
+            //May never realistically execute these except in fringe scenarios
+            if (og_stock_price_one < new_stock_price_one) {
+                //If the price is increasing
+                TEMPLATED_SAFE_SELL_STOCK(ticker[1], &la, 1000);//Sell all of ours, should get a good fix of full fail, partial fail
+
+            } else if (og_stock_price_one > new_stock_price_one) {
+                //If the price is decreasing
+                TEMPLATED_SAFE_BUY_STOCK(ticker[1], &la, 1000);//Buy as many as we can
             }
             //We decided what we want to do by now, buy, sell, or do nothing
-            VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(ticker, &la);//SHOULD WE BE DOING ANYTHING ELSE?
+            VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(ticker[0], &la);//SHOULD WE BE DOING ANYTHING ELSE?
+            VERIFY_HELD_STOCK_N_ACCOUNT_CASH_N_STOCK_PRICE(ticker[1], &la);
 
             debug_ADJUST_RNG(1);
             debug_current_time_SET_GLOBAL(debug_current_time_GLOBAL() + DAY_TO_SEC(1));
         }
-    )
 }
 
-bool intermediate_load_saved_transactions(bool silent/* = false*/) {
-    UNIT_TEST_TRY_WRAPPER(
-        debug_account_cash_SET_GLOBAL(200);
-        debug_stock_price_SET_GLOBAL("MSFT", 10);
-        logical_account * og_la = new logical_account("test", false);
-        TEMPLATED_UNSAFE_BUY_STOCK("MSFT", og_la, 10);
-        delete(og_la);
-        debug_stock_price_SET_GLOBAL("MSFT", 5);
-        logical_account * newer_la = new logical_account("test");//Let account load
-        newer_la->sell_stock("MSFT", 10);//Should fully fail
-        double account_cash = newer_la->available_cash();
-        uint32_t stock_held = newer_la->held_stock("MSFT");
-        THROW_IF_FALSE(account_cash == 100, account_cash);
-        THROW_IF_FALSE(stock_held == 10, stock_held);
-        debug_stock_price_SET_GLOBAL("MSFT", 20);
-        TEMPLATED_UNSAFE_SELL_STOCK("MSFT", newer_la, 10, true);//Should fully succeed
-        delete(newer_la);
-    )
+UNIT_TEST(intermediate_load_saved_transactions) {
+    debug_account_cash_SET_GLOBAL(200);
+    debug_stock_price_SET_GLOBAL("MSFT", 10);
+    logical_account * og_la = new logical_account("test", false);
+    TEMPLATED_UNSAFE_BUY_STOCK("MSFT", og_la, 10);
+    delete(og_la);
+    debug_stock_price_SET_GLOBAL("MSFT", 5);
+    logical_account * newer_la = new logical_account("test");//Let account load
+    newer_la->sell_stock("MSFT", 10);//Should fully fail
+    double account_cash = newer_la->available_cash();
+    uint32_t stock_held = newer_la->held_stock("MSFT");
+    THROW_IF_FALSE(account_cash == 100, account_cash);
+    THROW_IF_FALSE(stock_held == 10, stock_held);
+    debug_stock_price_SET_GLOBAL("MSFT", 20);
+    TEMPLATED_UNSAFE_SELL_STOCK("MSFT", newer_la, 10, true);//Should fully succeed
+    delete(newer_la);
 }
 
 //Basic version of historical prices with only a couple seconds deviation
-bool intermediate_historical_prices_basic(bool silent/* = false*/) {
-    UNIT_TEST_TRY_WRAPPER(//Start time at 69420
-        debug_stock_price_SET_GLOBAL("MSFT", 100);
-        debug_current_time_SET_NATURAL_CHANGING_GLOBAL(false);
-        time_t start_time = debug_current_time_GLOBAL();
-        logical_account la("test", false);
-        la.stock_price("MSFT");//Save 100
-        debug_sleep_for_FAKE(2);//Pretend to sleep 2 secs, now 69422
-        //time_t first_saved = debug_current_time_GLOBAL();
-        debug_stock_price_SET_GLOBAL("MSFT", 150);
-        la.stock_price("MSFT");//Save 150
-        debug_sleep_for_FAKE(2);//Now 69424
-        debug_stock_price_SET_GLOBAL("MSFT", 200);
-        la.stock_price("MSFT");//Save 200
-        debug_sleep_for_FAKE(2);//Now 69426
-        debug_stock_price_SET_GLOBAL("MSFT", 50);
-        la.stock_price("MSFT");//Save 50
-        debug_sleep_for_FAKE(2);//Now 69428
-        debug_stock_price_SET_GLOBAL("MSFT", 500);
-        la.stock_price("MSFT");//Save 500
-        time_keeper tk_one; time_keeper tk_two;
-        time_t final_current_time = debug_current_time_GLOBAL();
-        tk_one.adjust_second(start_time - final_current_time);
-        time_t min_time = tk_one.finalize();
-        time_t max_time = tk_two.finalize();
-        THROW_IF_FALSE_TWO(min_time == start_time, min_time, start_time);
-        THROW_IF_FALSE_TWO(max_time == final_current_time, max_time, final_current_time);
-        //type of std::vector<std::pair<time_t, double>>, but UNIT_TEST_TRY_WRAPPER macro hates the extra commas lmao. Fucken hate the limits of c++ macros
-        auto historical_prices = la.get_historical_price_in_range("MSFT", min_time, max_time);
-        THROW_IF_FALSE(historical_prices->size() == 5, historical_prices->size());
-        time_t saved_time_one = (*historical_prices)[1].first;
-        double saved_price_one = (*historical_prices)[1].second;
-        time_t saved_time_two = (*historical_prices)[2].first;
-        double saved_price_two = (*historical_prices)[2].second;
-        time_t saved_time_three = (*historical_prices)[3].first;
-        double saved_price_three = (*historical_prices)[3].second;
-        auto historical_prices_two = la.get_historical_price_in_range("MSFT", saved_time_one, saved_time_three);
-        THROW_IF_FALSE(historical_prices->size() == 3, historical_prices->size());
-        THROW_IF_FALSE_TWO((*historical_prices_two)[0].first == saved_time_one, (*historical_prices_two)[0].first, saved_time_one);
-        THROW_IF_FALSE_TWO((*historical_prices_two)[0].second == saved_price_one, (*historical_prices_two)[0].second, saved_price_one);
-        THROW_IF_FALSE_TWO((*historical_prices_two)[1].first == saved_time_two, (*historical_prices_two)[1].first, saved_time_two);
-        THROW_IF_FALSE_TWO((*historical_prices_two)[1].second == saved_price_two, (*historical_prices_two)[1].second, saved_price_two);
-        THROW_IF_FALSE_TWO((*historical_prices_two)[2].first == saved_time_three, (*historical_prices_two)[2].first, saved_time_three);
-        THROW_IF_FALSE_TWO((*historical_prices_two)[2].second == saved_price_three, (*historical_prices_two)[2].second, saved_price_three);
-    )
+UNIT_TEST(intermediate_historical_prices_basic) {
+    debug_stock_price_SET_GLOBAL("MSFT", 100);
+    debug_current_time_SET_NATURAL_CHANGING_GLOBAL(false);
+    time_t start_time = debug_current_time_GLOBAL();
+    logical_account la("test", false);
+    la.stock_price("MSFT");//Save 100
+    debug_sleep_for_FAKE(2);//Pretend to sleep 2 secs, now 69422
+    //time_t first_saved = debug_current_time_GLOBAL();
+    debug_stock_price_SET_GLOBAL("MSFT", 150);
+    la.stock_price("MSFT");//Save 150
+    debug_sleep_for_FAKE(2);//Now 69424
+    debug_stock_price_SET_GLOBAL("MSFT", 200);
+    la.stock_price("MSFT");//Save 200
+    debug_sleep_for_FAKE(2);//Now 69426
+    debug_stock_price_SET_GLOBAL("MSFT", 50);
+    la.stock_price("MSFT");//Save 50
+    debug_sleep_for_FAKE(2);//Now 69428
+    debug_stock_price_SET_GLOBAL("MSFT", 500);
+    la.stock_price("MSFT");//Save 500
+    time_keeper tk_one; time_keeper tk_two;
+    time_t final_current_time = debug_current_time_GLOBAL();
+    tk_one.adjust_second(start_time - final_current_time);
+    time_t min_time = tk_one.finalize();
+    time_t max_time = tk_two.finalize();
+    THROW_IF_FALSE_TWO(min_time == start_time, min_time, start_time);
+    THROW_IF_FALSE_TWO(max_time == final_current_time, max_time, final_current_time);
+    //type of std::vector<std::pair<time_t, double>>, but UNIT_TEST_TRY_WRAPPER macro hates the extra commas lmao. Fucken hate the limits of c++ macros
+    auto historical_prices = la.get_historical_price_in_range("MSFT", min_time, max_time);
+    THROW_IF_FALSE(historical_prices->size() == 5, historical_prices->size());
+    time_t saved_time_one = (*historical_prices)[1].first;
+    double saved_price_one = (*historical_prices)[1].second;
+    time_t saved_time_two = (*historical_prices)[2].first;
+    double saved_price_two = (*historical_prices)[2].second;
+    time_t saved_time_three = (*historical_prices)[3].first;
+    double saved_price_three = (*historical_prices)[3].second;
+    auto historical_prices_two = la.get_historical_price_in_range("MSFT", saved_time_one, saved_time_three);
+    THROW_IF_FALSE(historical_prices->size() == 3, historical_prices->size());
+    THROW_IF_FALSE_TWO((*historical_prices_two)[0].first == saved_time_one, (*historical_prices_two)[0].first, saved_time_one);
+    THROW_IF_FALSE_TWO((*historical_prices_two)[0].second == saved_price_one, (*historical_prices_two)[0].second, saved_price_one);
+    THROW_IF_FALSE_TWO((*historical_prices_two)[1].first == saved_time_two, (*historical_prices_two)[1].first, saved_time_two);
+    THROW_IF_FALSE_TWO((*historical_prices_two)[1].second == saved_price_two, (*historical_prices_two)[1].second, saved_price_two);
+    THROW_IF_FALSE_TWO((*historical_prices_two)[2].first == saved_time_three, (*historical_prices_two)[2].first, saved_time_three);
+    THROW_IF_FALSE_TWO((*historical_prices_two)[2].second == saved_price_three, (*historical_prices_two)[2].second, saved_price_three);
 }
 
 //ADD UNIT TESTS FOR TICKER PRICE HISTORY
@@ -473,3 +501,23 @@ bool intermediate_historical_prices_basic(bool silent/* = false*/) {
 
 
 //ADD UNIT TEST FOR A STALLED ASYNC ALONGSIDE INLINE EXEC
+
+
+
+//ADVANCED
+//Todo need to fix asserts before tackling api fails
+UNIT_TEST(advanced_account_functionality_basic) {
+    debug_account_cash_SET_GLOBAL(200);
+    debug_stock_price_SET_GLOBAL("MSFT", 10);
+    logical_account la("test", false);
+    //std::cout<<"ENABLING FAILURES"<<std::endl;
+    debug_api_failure_SET_GLOBAL(1);//Guarentees a failure, fail chance becomes a 1/1
+    uint32_t amount_bought = la.buy_stock("MSFT", 10);//Should 100% result in a throw in the get_stock_price api
+    //std::cout<<"DISABLING FAILURES"<<std::endl;
+    debug_api_failure_RESET_GLOBAL();
+    uint32_t amount_owned = la.held_stock("MSFT");
+    double account_cash = la.available_cash();
+    THROW_IF_FALSE(amount_bought == 0, amount_bought);
+    THROW_IF_FALSE(amount_owned == 0, amount_owned);
+    THROW_IF_FALSE(account_cash == 200, account_cash);
+}

@@ -39,6 +39,7 @@ bool intermediate_force_sell_fully_unprofitable(bool silent = false);
 bool intermediate_load_saved_transactions(bool silent = false);
 bool intermediate_historical_prices_basic(bool silent = false);
 bool intermediate_repeated_buy_sell_one_advanced(bool silent = false);
+bool intermediate_repeated_buy_sell_one_expert(bool silent = false);
 
 
 #define RUN_FUNC_ON_INTERMEDIATE_TESTS(Global_Func, Func, Testing_Name) \
@@ -51,9 +52,26 @@ bool intermediate_repeated_buy_sell_one_advanced(bool silent = false);
     Func(intermediate_load_saved_transactions) \
     Func(intermediate_historical_prices_basic) \
     Func(intermediate_repeated_buy_sell_one_advanced) \
+    Func(intermediate_repeated_buy_sell_one_expert) \
     , \
     Testing_Name \
-    ) 
+    )
+
+
+
+//ADVANCED
+bool advanced_account_functionality_basic(bool silent = false);
+
+
+
+#define RUN_FUNC_ON_ADVANCED_TESTS(Global_Func, Func, Testing_Name) \
+    Global_Func( \
+    Func(advanced_account_functionality_basic) \
+    , \
+    Testing_Name \
+    )
+
+
 
 #define RUN_SILENT_GLOBAL_FUNC(tests, tests_name) \
     do { \
@@ -70,6 +88,9 @@ bool intermediate_repeated_buy_sell_one_advanced(bool silent = false);
         } \
     } while(false);
 
+#define RUN_NORMAL_GLOBAL_FUNC(tests, tests_name) \
+    tests
+
 #define RUN_SILENT_FUNC(unit_test) \
     if ((!silent_mode || succeeded) && !unit_test(silent_mode)) { \
         succeeded = false; \
@@ -79,11 +100,13 @@ bool intermediate_repeated_buy_sell_one_advanced(bool silent = false);
     unit_test();
 
 
-#define RUN_BASIC                   RUN_FUNC_ON_BASIC_TESTS(, RUN_NORMAL_FUNC, "BASIC")
+#define RUN_BASIC                   RUN_FUNC_ON_BASIC_TESTS(RUN_NORMAL_GLOBAL_FUNC, RUN_NORMAL_FUNC, "BASIC")
 #define RUN_BASIC_SILENT            RUN_FUNC_ON_BASIC_TESTS(RUN_SILENT_GLOBAL_FUNC, RUN_SILENT_FUNC, "BASIC")
 
-#define RUN_INTERMEDIATE            RUN_FUNC_ON_INTERMEDIATE_TESTS( , RUN_NORMAL_FUNC, "INTERMEDIATE")
+#define RUN_INTERMEDIATE            RUN_FUNC_ON_INTERMEDIATE_TESTS(RUN_NORMAL_GLOBAL_FUNC, RUN_NORMAL_FUNC, "INTERMEDIATE")
 #define RUN_INTERMEDIATE_SILENT     RUN_FUNC_ON_INTERMEDIATE_TESTS(RUN_SILENT_GLOBAL_FUNC, RUN_SILENT_FUNC, "INTERMEDIATE")
+
+#define RUN_ADVANCED                RUN_FUNC_ON_ADVANCED_TESTS(RUN_NORMAL_GLOBAL_FUNC, RUN_NORMAL_FUNC, "ADVANCED")
 
 
 
