@@ -345,7 +345,7 @@ inline void TEMPLATED_SAFE_SELL_STOCK(std::string ticker, logical_account * acco
 }
 
 
-UNIT_TEST(intermediate_repeated_buy_sell_one_advanced) {//TODO, does limited number checking
+UNIT_TEST(intermediate_repeated_buy_sell_advanced) {//TODO, does limited number checking
     //IMPLEMENTATION OF RNG
     //For number of itertions
     std::string ticker = "MSFT";
@@ -382,7 +382,7 @@ UNIT_TEST(intermediate_repeated_buy_sell_one_advanced) {//TODO, does limited num
     }
 }
 
-UNIT_TEST(intermediate_repeated_buy_sell_one_expert) {//TODO
+UNIT_TEST(intermediate_repeated_buy_sell_expert) {//TODO
         //IMPLEMENTATION OF RNG
         //For number of itertions
         std::string ticker[] = {"MSFT", "AAPL"};

@@ -38,8 +38,8 @@ bool intermediate_sell_partially_unprofitable(bool silent = false);
 bool intermediate_force_sell_fully_unprofitable(bool silent = false);
 bool intermediate_load_saved_transactions(bool silent = false);
 bool intermediate_historical_prices_basic(bool silent = false);
-bool intermediate_repeated_buy_sell_one_advanced(bool silent = false);
-bool intermediate_repeated_buy_sell_one_expert(bool silent = false);
+bool intermediate_repeated_buy_sell_advanced(bool silent = false);
+bool intermediate_repeated_buy_sell_expert(bool silent = false);
 
 
 #define RUN_FUNC_ON_INTERMEDIATE_TESTS(Global_Func, Func, Testing_Name) \
@@ -51,8 +51,8 @@ bool intermediate_repeated_buy_sell_one_expert(bool silent = false);
     Func(intermediate_force_sell_fully_unprofitable) \
     Func(intermediate_load_saved_transactions) \
     Func(intermediate_historical_prices_basic) \
-    Func(intermediate_repeated_buy_sell_one_advanced) \
-    Func(intermediate_repeated_buy_sell_one_expert) \
+    Func(intermediate_repeated_buy_sell_advanced) \
+    Func(intermediate_repeated_buy_sell_expert) \
     , \
     Testing_Name \
     )

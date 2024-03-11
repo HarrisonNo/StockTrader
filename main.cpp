@@ -8,6 +8,5 @@
 int main() {
     RUN_BASIC_SILENT
     RUN_INTERMEDIATE_SILENT
-
     RUN_ADVANCED
 }
