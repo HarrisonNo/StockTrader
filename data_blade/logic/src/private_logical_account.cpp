@@ -1,5 +1,6 @@
 #include <thread>
 #include <filesystem>
+#include <climits>
 #include "logical_account.h"
 #include "logical_ticker.h"
 #include "directory_file_saving.h"

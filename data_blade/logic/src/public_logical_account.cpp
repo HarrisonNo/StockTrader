@@ -1,4 +1,5 @@
 #include <thread>
+#include <climits>
 #include "logical_account.h"
 #include "assert_and_verify.h"
 #include "logical_ticker.h"
@@ -132,7 +133,7 @@ Description:
 Assumptions:
 */
 std::future<uint32_t> logical_account::async_buy_stock(std::string ticker, uint32_t amount) {
-    return std::async (logical_account::buy_stock, this, ticker, amount);
+    return std::async (&logical_account::buy_stock, this, ticker, amount);
 }
 
 
@@ -250,7 +251,7 @@ Description:
 Assumptions:
 */
 std::future<double> logical_account::async_stock_price(std::string ticker, bool force_check/* = false*/) {
-    return std::async (logical_account::stock_price, this, ticker, force_check);
+    return std::async (&logical_account::stock_price, this, ticker, force_check);
 }
 
 

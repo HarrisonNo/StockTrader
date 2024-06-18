@@ -1,6 +1,7 @@
 #include <thread>
 #include <exception>
 #include <fstream>
+#include <climits>
 #include "assert_and_verify.h"
 #include "directory_file_saving.h"
 #include "logical_ticker.h"
