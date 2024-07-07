@@ -1,6 +1,8 @@
 StockTrader
 =============
 
+Usage: "python3 bob_the_builder.py all|build_all|debug_build_debug"
+
 This program is intended as a logical abstraction layer between a stock broker REST api
 and some generalized user stock trading commmands. With the intent being that various stock
 broker REST apis can be swapped out with minimal logical oversight required.
