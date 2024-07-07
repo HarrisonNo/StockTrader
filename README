@@ -1,0 +1,14 @@
+StockTrader
+=============
+
+This program is intended as a logical abstraction layer between a stock broker REST api
+and some generalized user stock trading commmands. With the intent being that various stock
+broker REST apis can be swapped out with minimal logical oversight required.
+
+This is very much a V1.0. Further progress can theoretically be made in both the advanced unit tests
+and in the ratcheting zone between the logical layer and the REST layer. More likely however this should
+be rewritten and cleaned up as this rough draft presents several unnecessary problems. Rewritting in Rust
+would be quite beneficial due to the dedicated unit test infrastructure present alongside the infinitely more
+robust macro system.
+
+TODO: Rewrite this entire project in either C++ or Rust.
